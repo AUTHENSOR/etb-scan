@@ -50,7 +50,7 @@ What is added here: ten mechanisms rather than two, 36 organizations rather than
 
 Two sets are in play whenever anything is scored: the state the scorer reads, and the state the evaluated system can write. An ETB failure is a non-empty intersection.
 
-![The Evaluator Trust Boundary. The scorer should read only from the left; the evaluated system writes only into the right. Every class in Section 2.2 is one way the two came to overlap.](figures/trust_boundary.pdf)
+![The left set holds the rubric, frozen ground truth, and the judge's own structured output. The right holds the answer, its reasoning, tool arguments, stdout, and the transcript. The invariant says the overlap must be empty; each class in Table 1 is one way it stopped being.](figures/trust_boundary.pdf)
 
 ### 2.2 The mechanisms
 
@@ -194,15 +194,13 @@ Ground-truth reward over the same runs: 0.300 → 0.725 (0.5B), 0.400 → 0.500 
 
 **The hazard is trainable in both directions.** Optimizing the vulnerable track raises exploitation from 11.3% to 50.0% at 0.5B, confirming the temptation is learnable rather than incidental. Optimizing the ground-truth track drives exploitation to near zero at every rung while holding or lifting the honest reward.
 
-### 5.4 Relation to reward-model overoptimization
+### 5.4 Relation to the reward-hacking literature
 
-Scaling laws for reward-model overoptimization \citep{gao2023scaling, rafailov2024scaling} describe how a policy's true reward degrades as it is optimized against a proxy reward model, parameterized by KL budget and model size. The quantity measured here is different in three ways: it is the **base rate before any training**, measured on a **held-out set**, in models that were **never optimized against the exploitable reward**. Overoptimization is what happens when you push against a proxy; the base rate is what the policy does the first time it sees the gap. The 2026 survey \citep{survey2026rewardhacking} argues on general grounds that reward hacking is a structural instability of proxy-based alignment under scale. The ladder in 5.2 is evidence for that thesis rather than a discovery of it.
+Overoptimization scaling laws \citep{gao2023scaling, rafailov2024scaling} describe how true reward degrades as a policy is pushed against a proxy. The quantity here is different: a base rate, on held-out prompts, in models never optimized against the exploitable reward. Overoptimization is what happens when you push; the base rate is what the policy does the first time it sees the gap. The 2026 survey \citep{survey2026rewardhacking} argues that reward hacking is a structural instability of proxy-based alignment under scale, and the ladder is evidence for that thesis rather than a discovery of it.
 
-### 5.5 Relation to reward-model-side mitigations
+Mitigations such as ODIN \citep{chen2024odin} and reward-model ensembles \citep{coste2024ensembles} work by building a better proxy. This intervention does not: `reward_true` is a function of frozen ground truth the policy cannot influence, so no exploit raises it by construction rather than by degree. That is only available where such ground truth exists, which is why the two approaches are complementary.
 
-ODIN \citep{chen2024odin}, InfoRM, and reward-model ensembles \citep{coste2024ensembles} reduce reward hacking by building a **better proxy**: disentangling length, regularizing with information-theoretic objectives, or averaging over ensembles. The intervention here is not a better proxy. `reward_true` is a pure function of frozen ground truth the policy cannot influence, so no exploit can raise it by construction rather than by degree. That is available only where such ground truth exists, which is a real limitation and the reason these approaches are complementary rather than competing.
-
-### 5.6 Limitations
+### 5.5 Limitations
 
 The 7B run required 200 steps at β=0.05; at the gentler 0.5B configuration it barely moved. That is a training-budget fact, not a property of the environment, but it means the three rungs are not a controlled scaling study. The 1.5B and 7B base rates are close enough (50.0% vs 45.0%) that the trend is better described as "high and non-decreasing above 1.5B" than as monotonic. Results are on a single environment; generalization across the other nine classes is untested. Holdout n=80 gives roughly ±11 points at 95% confidence on a 50% rate, so the base-rate ordering between 1.5B and 7B is not resolved by this data.
 
@@ -280,7 +278,7 @@ The two studies differ in three ways.
 
 **Measurement versus intervention.** Their contribution is an evaluation paradigm and they run no RL. Section 5 has no counterpart in their work: two policies trained identically except for which reward track the optimizer sees, at three model sizes, with exploitation driven to near zero on the ground-truth track.
 
-Their findings also corroborate ours on an axis we did not test. They report that hack rate rises **monotonically with task difficulty**, that law-abiding instructions reduce but never eliminate hacking, and, most relevantly, that under persistent memory across games "hacking is emergent and addictive: once started, it tends to recur." That last observation is a behavioral analogue of our Section 5.3 finding that the vulnerable track is learnable: they observe the effect accumulate within a context window, we observe it accumulate in the weights. Read together, difficulty and model scale are two axes along which the same hazard grows.
+They corroborate our result on an axis we did not test: hack rate rises monotonically with task difficulty, and under persistent memory "hacking is emergent and addictive: once started, it tends to recur." That is the behavioural analogue of Section 5.3's finding that the vulnerable track is learnable, accumulating within a context window rather than in the weights. Difficulty and model scale are two axes along which the same hazard grows.
 
 ### 7.3 Adjacent literature
 
@@ -290,13 +288,11 @@ The LLM-as-judge robustness literature establishes that judges are manipulable i
 
 ## 8. Continued work
 
-The operational test this paper proposes is a single question asked of every scoring path: *what does this read that the policy can write?* Answering it is a source-review task, which does not scale, so we implemented the one class that can be measured from outside the code.
+The test this paper proposes is one question asked of every scoring path: *what does this read that the policy can write?* Answering it means reading source, which does not scale, so we implemented the one class measurable from outside the code. `etb-scan` presents a judge with 25 injected scenarios and 8 benign controls and reports how often model-written text flips a failing verdict to a passing one. It runs offline, and reports a scenario as unscorable rather than clean whenever the measurement did not succeed, since a vacuous zero reads exactly like a clean bill of health. Section 4.1 is its first application to a frontier model.
 
-`etb-scan` is a free detector for ETB-01. It presents a judge with 25 injected scenarios across five attack families and 8 benign controls, and reports the rate at which text written by the evaluated model flips a failing verdict to a passing one. It runs offline against a judge callable, with no model spend, and reports a scenario as unscorable rather than clean whenever the measurement did not succeed, since a vacuous zero reads exactly like a clean bill of health. Section 4.1 is its first application to a frontier model.
+The other nine classes are visible only to someone reading the source, and there is no equivalent detector for any of them. That is the obvious next piece of work.
 
-The nine remaining classes are not detectable from outside the scoring code. Dropped denominators, fail-open error paths and forged execution artifacts are visible only to someone reading the source, and closing that gap is the obvious next piece of work: the mechanisms are enumerated and the fix patterns are known, but there is no equivalent of `etb-scan` for any of them.
-
-The error an ETB failure introduces is worth stating plainly, because it is not the error most readers assume. It is not noise. A scorer that reads what the policy writes is biased in one direction, toward passing, and the bias grows with the policy's capability rather than washing out with more samples.
+One property of this error is worth stating plainly, because it is not the one most readers assume: it is not noise. A scorer that reads what the policy writes is biased toward passing, and the bias grows with capability rather than averaging out over more samples.
 
 ---
 
