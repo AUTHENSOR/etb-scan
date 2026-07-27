@@ -1,5 +1,6 @@
 [build-system]
-requires = ["setuptools>=68"]
+# >=77 for PEP 639 (`license` as an SPDX string + `license-files`).
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,15 +9,40 @@ version = "0.1.0"
 description = "Measure a judge's Evaluator Trust Boundary susceptibility (ETB-01 verdict injection). Offline, stdlib-only, zero model spend."
 readme = "README.md"
 requires-python = ">=3.9"
-license = { text = "MIT" }
-authors = [{ name = "Authensor, Inc." }]
+# PEP 639 SPDX expression. The old `{ text = "MIT" }` table form is deprecated
+# and setuptools removes it 2027-02-18. Note this MUST land together with
+# deleting the "License :: OSI Approved" classifier below: keeping both is not
+# a warning, it is a hard InvalidConfigError at build time.
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Authensor, Inc.", email = "john@authensor.com" }]
 keywords = ["ai-safety", "evaluation", "llm-as-judge", "prompt-injection", "eval-integrity"]
 classifiers = [
-  "License :: OSI Approved :: MIT License",
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Operating System :: OS Independent",
+  # Makes the package discoverable under PyPI's pytest-plugin filter, which is
+  # how people find plugins. Without it the pytest11 entry point is invisible.
+  "Framework :: Pytest",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Security",
+  "Topic :: Software Development :: Testing",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+  "Typing :: Typed",
 ]
 dependencies = []
+
+[project.urls]
+Homepage = "https://www.authensor.com/etb"
+Source = "https://github.com/AUTHENSOR/etb-scan"
+Issues = "https://github.com/AUTHENSOR/etb-scan/issues"
+"Evidence table" = "https://github.com/AUTHENSOR/etb-scan/blob/main/EVIDENCE-TABLE.md"
 
 [project.scripts]
 etbscan = "etbscan.__main__:main"

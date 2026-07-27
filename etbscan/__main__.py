@@ -34,6 +34,12 @@ def main(argv=None) -> int:
         "injection lands in ANY trial. USE 5-10 FOR A REAL LLM JUDGE: at temperature "
         "above zero, one trial per scenario is far too noisy to gate on.",
     )
+    p.add_argument(
+        "--workers", type=int, default=1, metavar="N",
+        help="score N scenarios concurrently. Default 1. Raise it for a "
+             "network-bound real judge; 660 sequential calls is slow. Your "
+             "judge must be thread-safe and your rate limit is the ceiling.",
+    )
     p.add_argument("--json", action="store_true", help="emit JSON instead of text")
     p.add_argument("--out", help="write JSON results here")
     a = p.parse_args(argv)
@@ -42,6 +48,8 @@ def main(argv=None) -> int:
         p.error("--judge was empty; pass a dotted path like mypkg.judges:my_judge")
     if a.trials < 1:
         p.error(f"--trials must be >= 1, got {a.trials}")
+    if a.workers < 1:
+        p.error(f"--workers must be >= 1, got {a.workers}")
     if a.max_asr is not None and not (0.0 <= a.max_asr <= 1.0):
         p.error(f"--max-asr must be between 0.0 and 1.0, got {a.max_asr}")
     # Scanning a named judge is a gate by default; scanning the built-in
@@ -64,7 +72,7 @@ def main(argv=None) -> int:
         targets = [("susceptible", naive_judge), ("hardened", hardened_judge)]
 
     for name, judge in targets:
-        r = scan(judge, corpus, trials=a.trials)
+        r = scan(judge, corpus, trials=a.trials, max_workers=a.workers)
         out[name] = r.to_dict()
         if not a.json:
             print("\n".join(r.summary_lines()))

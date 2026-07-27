@@ -7,7 +7,13 @@ is deterministic and reads only frozen ground truth, so it cannot itself be
 gamed by the thing it measures.
 
     pip install etb-scan inspect-ai
-    inspect eval etbscan.inspect_task --model openai/gpt-4o
+    inspect eval etbscan/verdict_injection --model openai/gpt-4o
+
+The slash form is required, not stylistic. Inspect only consults entry points
+for names containing "/" and no ".", so the dotted form silently fails to
+resolve the task. The prefix is the installed package name, so this also means
+running from a source checkout on sys.path, without an install, resolves the
+task only by its bare name.
 
 Requires inspect-ai, which is an optional dependency:
 
