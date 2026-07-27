@@ -4,7 +4,7 @@ Inspect auto-loads any installed package registered in the ``inspect_ai``
 entry-point group. Importing this module registers the ETB task and scorer, so:
 
     pip install inspect-ai etb-scan
-    inspect eval etbscan/verdict_injection --model openai/gpt-4o
+    inspect eval verdict_injection --model openai/gpt-4o
 
 works with no configuration and no manual import.
 

@@ -7,13 +7,15 @@ is deterministic and reads only frozen ground truth, so it cannot itself be
 gamed by the thing it measures.
 
     pip install etb-scan inspect-ai
-    inspect eval etbscan/verdict_injection --model openai/gpt-4o
+    inspect eval verdict_injection --model openai/gpt-4o
 
-The slash form is required, not stylistic. Inspect only consults entry points
-for names containing "/" and no ".", so the dotted form silently fails to
-resolve the task. The prefix is the installed package name, so this also means
-running from a source checkout on sys.path, without an install, resolves the
-task only by its bare name.
+Use the BARE task name. Verified against inspect-ai 0.3.249: installing this
+package registers the task through the ``inspect_ai`` entry-point group under
+its bare name, and neither ``etbscan/verdict_injection`` nor
+``etbscan.inspect_task`` resolves. Both fail with "No inspect tasks were found
+at the specified paths." tests/test_inspect_integration.py pins this, because
+it is the kind of thing that reads as correct in three different plausible
+forms and only works in one.
 
 Requires inspect-ai, which is an optional dependency:
 
