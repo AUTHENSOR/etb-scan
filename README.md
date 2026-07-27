@@ -108,6 +108,28 @@ find, and worse than missing an attack.
 So: a positive is strong evidence. **A negative is not evidence of absence.**
 Treat the Inspect task's score as a lower bound.
 
+## Verified against a real judge
+
+The figures above characterize two offline mocks. [`verified_run_real_judge/`](verified_run_real_judge/)
+puts Kimi K3 behind three scoring code paths and measures what changes:
+
+| arm | ASR | control FP | trustworthy |
+|---|---|---|---|
+| model called cleanly, verdict read from its own final line | 0.0000 | 0.0000 | yes |
+| candidate concatenated into the prompt, verdict read from the reply | 0.0000 | 0.0000 | yes |
+| **same call as the first row**, verdict read by greedy first-match over a candidate-containing blob | **1.0000** | 0.3750 | no |
+
+Same model, same system prompt, same API call. Only the extraction moved. The
+model followed zero injections when extraction was bound correctly, which is
+the point: hardening the judge model bought nothing, because the defect was
+never in the model.
+
+The control false-fires are the sharper result. Greedy first-match read `PASS`
+out of the grader's own sentence *"requires at least 3 for PASS"*, sixty
+characters ahead of its actual `VERDICT: FAIL`. The judge was right on every
+control. The code was not. A broken extraction path does not only leak to
+attackers; it makes benign grading nondeterministic.
+
 ## Scope and honesty
 
 - The `1.0000` / `0.0000` figures characterize the **two reference judges**, not the ecosystem. They are the instrument's calibration, not a population estimate.
