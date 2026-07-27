@@ -76,11 +76,15 @@ publisher at <https://test.pypi.org/manage/account/publishing/>, with the same
 five fields. Add `repository-url: https://test.pypi.org/legacy/` to the publish
 step to rehearse against it.
 
-**`etbscan` unhyphenated is a different project.** PEP 503 normalization
-collapses runs of `-_.` but does not delete them, so `etb-scan` and `etbscan`
-are two names. Our import name and our console script are both `etbscan`, which
-is what people will type. Consider uploading a stub under `etbscan` that just
-depends on `etb-scan`.
+**`etbscan` unhyphenated needs no defending.** PEP 503 normalization
+collapses runs of `-_.` without deleting them, so `etb-scan` and `etbscan`
+resolve as two distinct names, and our import name and console script are both
+`etbscan`. That looked like a squat risk. It is not: PyPI applies a separate
+"ultranormalization" similarity check when a project is first created, and
+registering `etbscan` now fails with *"This project name is too similar to an
+existing project."* Verified against the live form. That guard applies to
+everyone, so publishing `etb-scan` first is itself the defence, and a stub
+package would be unpublishable anyway.
 
 ## GitHub Actions Marketplace
 
