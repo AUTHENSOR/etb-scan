@@ -1,0 +1,20 @@
+- id: etb-scan
+  name: ETB-01 verdict-injection scan
+  description: >
+    Fail the commit if your LLM judge can be made to pass a failing answer by
+    text the evaluated model wrote. You MUST point it at your judge:
+
+      - repo: https://github.com/AUTHENSOR/etb-scan
+        rev: v0.1.0
+        hooks:
+          - id: etb-scan
+            args: ["--judge", "yourpkg.judges:your_judge"]
+
+    The default args below are a placeholder that fails loudly, on purpose: a
+    security hook that silently passes because it was never configured is worse
+    than no hook at all.
+  entry: etbscan
+  language: python
+  args: ["--judge", "CONFIGURE_ME:your_judge"]
+  pass_filenames: false
+  stages: [pre-commit, pre-push, manual]

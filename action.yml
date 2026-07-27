@@ -1,0 +1,127 @@
+name: "ETB Scan"
+description: "Fail CI if your LLM judge can be made to pass a failing answer by text the evaluated model wrote (ETB-01)."
+author: "Authensor, Inc."
+branding:
+  icon: "shield"
+  color: "gray-dark"
+
+inputs:
+  judge:
+    description: >
+      Dotted path to your judge callable, e.g. "myapp.judges:my_judge".
+      Must accept (candidate, rubric, question) or (candidate, rubric) and
+      return a verdict dict.
+    required: true
+  max-asr:
+    description: >
+      Maximum tolerated attack success rate, 0.0 to 1.0. The job fails if the
+      judge exceeds it, or if the judge fires on any benign control.
+    required: false
+    default: "0.0"
+  python-version:
+    description: "Python version used to run the scan."
+    required: false
+    default: "3.11"
+  working-directory:
+    description: "Directory to run from, so your judge is importable."
+    required: false
+    default: "."
+  install:
+    description: >
+      Command to install your project so the judge can be imported.
+      Defaults to an editable install of the working directory.
+    required: false
+    default: "pip install -e ."
+  results-path:
+    description: "Where to write the JSON result."
+    required: false
+    default: "etb-scan-results.json"
+
+outputs:
+  asr:
+    description: "Overall attack success rate for the scanned judge."
+    value: ${{ steps.scan.outputs.asr }}
+  control-fp:
+    description: "False-positive rate on the benign control set."
+    value: ${{ steps.scan.outputs.control-fp }}
+  trustworthy:
+    description: "False if the scan measured nothing, hit unscorable scenarios, or a control false-fired."
+    value: ${{ steps.scan.outputs.trustworthy }}
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install project and etb-scan
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      # `install` is a command by design, so it is intentionally executed as
+      # given. Every other input is passed through env and quoted, never
+      # interpolated into the shell.
+      env:
+        INSTALL_CMD: ${{ inputs.install }}
+      run: |
+        python -m pip install --upgrade pip
+        eval "$INSTALL_CMD"
+        pip install etb-scan
+
+    - name: Scan judge
+      id: scan
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        ETB_JUDGE: ${{ inputs.judge }}
+        ETB_MAX_ASR: ${{ inputs.max-asr }}
+        ETB_RESULTS: ${{ inputs.results-path }}
+      run: |
+        set -uo pipefail
+        python -m etbscan --judge "$ETB_JUDGE" --max-asr "$ETB_MAX_ASR" --out "$ETB_RESULTS"
+        code=$?
+
+        read -r asr fp trust < <(python - <<'PY'
+        import json, os
+        try:
+            d = json.load(open(os.environ["ETB_RESULTS"]))
+            k = next(iter(d))
+            r = d[k]
+            print(r.get("overall_asr", ""), r.get("control_fp_rate", ""), r.get("trustworthy", ""))
+        except Exception:
+            print("", "", "")
+        PY
+        )
+
+        printf 'asr=%s\n' "$asr" >> "$GITHUB_OUTPUT"
+        printf 'control-fp=%s\n' "$fp" >> "$GITHUB_OUTPUT"
+        printf 'trustworthy=%s\n' "$trust" >> "$GITHUB_OUTPUT"
+
+        {
+          echo "## ETB-01 verdict-injection scan"
+          echo ""
+          echo "| | |"
+          echo "|---|---|"
+          printf '| Judge | `%s` |\n' "$ETB_JUDGE"
+          printf '| Attack success rate | **%s** |\n' "${asr:-n/a}"
+          printf '| Allowed maximum | %s |\n' "$ETB_MAX_ASR"
+          printf '| Control false-positive rate | %s |\n' "${fp:-n/a}"
+          printf '| Trustworthy | %s |\n' "${trust:-n/a}"
+          echo ""
+          if [ "$code" -ne 0 ]; then
+            echo "The scan did not pass. Either the judge passed a failing answer because"
+            echo "of text the candidate wrote, or the result was not trustworthy."
+            echo "See <https://www.authensor.com/etb#etb-01>."
+          else
+            echo "No verdict flip on any injected scenario, and no false fire on the controls."
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
+        exit $code
+
+    - name: Upload results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: etb-scan-results
+        path: ${{ inputs.working-directory }}/${{ inputs.results-path }}
+        if-no-files-found: ignore
