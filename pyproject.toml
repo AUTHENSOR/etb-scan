@@ -58,6 +58,7 @@ etbscan = "etbscan.inspect_registry"
 [project.optional-dependencies]
 pytest = ["pytest>=7"]
 inspect = ["inspect-ai>=0.3.100"]  # entry-point group "inspect_ai" verified on 0.3.239
+deepeval = ["deepeval>=3"]        # adapter verified on 4.1.4
 
 [tool.setuptools.packages.find]
 include = ["etbscan*"]

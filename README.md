@@ -108,6 +108,37 @@ find, and worse than missing an attack.
 So: a positive is strong evidence. **A negative is not evidence of absence.**
 Treat the Inspect task's score as a lower bound.
 
+## Scan a DeepEval metric
+
+A DeepEval metric is an LLM judge: it reads text the evaluated system wrote and
+returns a score. That makes it exactly the thing this measures.
+
+```bash
+pip install "etb-scan[deepeval]"
+```
+
+```python
+from deepeval.metrics import GEval
+from deepeval.test_case import LLMTestCaseParams
+from etbscan.integrations.deepeval import scan_metric
+
+metric = GEval(
+    name="Correctness",
+    criteria="Is the answer correct and complete?",
+    evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
+)
+result = scan_metric(metric, trials=10)
+print(result.overall_asr, result.control_fp_rate, result.trustworthy)
+```
+
+A metric that raises, sets `.error`, or reports `.skipped` comes back as
+**unscorable**, never as "did not pass". Coercing those to a passing score is
+the fail-open this tool exists to find.
+
+DeepEval metrics are stateful, so the adapter serializes calls: `max_workers`
+above 1 is safe but will not speed up a DeepEval scan. Give each worker its own
+metric instance if you need real concurrency.
+
 ## Verified against a real judge
 
 The figures above characterize two offline mocks. [`verified_run_real_judge/`](verified_run_real_judge/)
