@@ -1,0 +1,18 @@
+{
+ "UKGovernmentBEIS/control-arena#809": "own PR #810 MERGED (breaking change)",
+ "UKGovernmentBEIS/control-arena#791": "routed -> #798 MERGED",
+ "UKGovernmentBEIS/inspect_ai#4283": "routed -> #4297 MERGED",
+ "UKGovernmentBEIS/inspect_ai#3603": "routed -> #3690 MERGED",
+ "UKGovernmentBEIS/inspect_ai#4286": "routed -> #4288 MERGED (title cites #4286)",
+ "UKGovernmentBEIS/inspect_cyber#114": "own PR MERGED",
+ "UKGovernmentBEIS/inspect_evals#1812": "own PR MERGED",
+ "meridianlabs-ai/inspect_scout#473": "own PR MERGED",
+ "NVIDIA/garak#1867": "routed -> #1884 MERGED (2026-07-24)",
+ "mlflow/mlflow#24179": "routed -> #24258 MERGED",
+ "567-labs/instructor#2424": "routed -> #2434 MERGED",
+ "Comfy-Org/ComfyUI#14732": "routed -> #14774 MERGED ('supersedes #14732')",
+ "data-privacy-stack/presidio#2074": "own PR MERGED",
+ "data-privacy-stack/presidio#2076": "own PR MERGED",
+ "data-privacy-stack/presidio#2077": "own PR MERGED",
+ "data-privacy-stack/presidio#2078": "own PR MERGED"
+}

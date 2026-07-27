@@ -1,0 +1,475 @@
+% references.bib for "The Evaluator Trust Boundary"
+% Rebuilt 2026-07-24 from the phase-1 bib (21 entries, 10-framework scope).
+%
+% VERIFICATION STATUS
+%   [OK]     bibliographic details are stable and widely cited; safe as-is.
+%   [CHECK]  correct to the best of my knowledge but NOT verified against the
+%            source in this session. Confirm arXiv number, venue, and date
+%            before submission. Several are 2025-2026 items reached through an
+%            automated research pass rather than read directly.
+%
+% Entries carried over from phase 1 that are still cited are unchanged.
+
+% ---------------------------------------------------------------------------
+% Prompt injection and judge manipulation  (the ETB-01 / ETB-02 lineage)
+% ---------------------------------------------------------------------------
+
+@misc{perez2022ignore,
+  title  = {Ignore Previous Prompt: Attack Techniques for Language Models},
+  author = {Perez, F{\'a}bio and Ribeiro, Ian},
+  year   = {2022},
+  eprint = {2211.09527},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}                                                                    % [OK]
+
+@misc{greshake2023indirect,
+  title  = {Not What You've Signed Up For: Compromising Real-World {LLM}-Integrated
+            Applications with Indirect Prompt Injection},
+  author = {Greshake, Kai and Abdelnabi, Sahar and Mishra, Shailesh and Endres,
+            Christoph and Holz, Thorsten and Fritz, Mario},
+  year   = {2023},
+  eprint = {2302.12173},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR}
+}                                                                    % [OK]
+
+@inproceedings{zheng2023judging,
+  title     = {Judging {LLM}-as-a-Judge with {MT-Bench} and {Chatbot Arena}},
+  author    = {Zheng, Lianmin and Chiang, Wei-Lin and Sheng, Ying and Zhuang,
+               Siyuan and Wu, Zhanghao and Zhuang, Yonghao and Lin, Zi and Li,
+               Zhuohan and Li, Dacheng and Xing, Eric P. and Zhang, Hao and
+               Gonzalez, Joseph E. and Stoica, Ion},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2023}
+}                                                                    % [OK]
+
+@misc{raina2024llmasajudge,
+  title  = {Is {LLM}-as-a-Judge Robust? Investigating Universal Adversarial
+            Attacks on Zero-shot {LLM} Assessment},
+  author = {Raina, Vyas and Liusie, Adian and Gales, Mark},
+  year   = {2024},
+  eprint = {2402.14016},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}                                                                    % [OK]
+
+@misc{panickssery2024llmeval,
+  title  = {{LLM} Evaluators Recognize and Favor Their Own Generations},
+  author = {Panickssery, Arjun and Bowman, Samuel R. and Feng, Shi},
+  year   = {2024},
+  eprint = {2404.13076},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}                                                                    % [OK]
+
+% ---------------------------------------------------------------------------
+% The audited frameworks
+% ---------------------------------------------------------------------------
+
+@misc{inspectai,
+  title        = {Inspect {AI}: Framework for Large Language Model Evaluations},
+  author       = {{UK AI Security Institute}},
+  howpublished = {\url{https://github.com/UKGovernmentBEIS/inspect_ai}},
+  note         = {Documentation at \url{https://inspect.aisi.org.uk/}. Released
+                  2024-05-10. The institute was renamed from the UK AI Safety
+                  Institute to the UK AI Security Institute in February 2025.},
+  year         = {2024},
+  month        = may
+}                                                                    % [OK] verified 2026-07-27 against the maintainers' CITATION.cff
+
+@misc{controlarena,
+  title  = {ControlArena},
+  author = {{UK AI Security Institute} and {Redwood Research}},
+  howpublished = {\url{https://github.com/UKGovernmentBEIS/control-arena}},
+  year   = {2025},
+  note   = {GitHub repository. Created by the UK AI Security Institute and
+            Redwood Research.}
+}                                                                    % [OK] verified 2026-07-27 against the README's own BibTeX; the earlier subtitle appears nowhere upstream
+
+@misc{mazeika2024harmbench,
+  title  = {{HarmBench}: A Standardized Evaluation Framework for Automated Red
+            Teaming and Robust Refusal},
+  author = {Mazeika, Mantas and Phan, Long and Yin, Xuwang and Zou, Andy and
+            Wang, Zifan and Mu, Norman and Sakhaee, Elham and Li, Nathaniel and
+            Basart, Steven and Li, Bo and Forsyth, David and Hendrycks, Dan},
+  year   = {2024},
+  eprint = {2402.04249},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}                                                                    % [OK]
+
+@inproceedings{wang2024decodingtrust,
+  title     = {{DecodingTrust}: A Comprehensive Assessment of Trustworthiness in
+               {GPT} Models},
+  author    = {Wang, Boxin and Chen, Weixin and Pei, Hengzhi and Xie, Chulin and
+               others},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2023}
+}                                                                    % [OK]
+
+@misc{debenedetti2024agentdojo,
+  title  = {{AgentDojo}: A Dynamic Environment to Evaluate Attacks and Defenses
+            for {LLM} Agents},
+  author = {Debenedetti, Edoardo and Zhang, Jie and Balunovi{\'c}, Mislav and
+            Beurer-Kellner, Luca and Fischer, Marc and Tram{\`e}r, Florian},
+  year   = {2024},
+  eprint = {2406.13352},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR}
+}                                                                    % [OK]
+
+@misc{pyrit2024,
+  title        = {{PyRIT}: A Framework for Security Risk Identification and Red
+                  Teaming in Generative {AI} Systems},
+  author       = {{Microsoft AI Red Team}},
+  howpublished = {\url{https://github.com/Azure/PyRIT}},
+  year         = {2024}
+}                                                                    % [OK]
+
+@misc{derczynski2024garak,
+  title  = {garak: A Framework for Security Probing Large Language Models},
+  author = {Derczynski, Leon and Galinkin, Erick and Martin, Jeffrey and
+            Majumdar, Subho and Inie, Nanna},
+  year   = {2024},
+  eprint = {2406.11036},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR}
+}                                                                    % [OK]
+
+@misc{petri2025,
+  title        = {Petri: An Open-Source Auditing Tool to Accelerate {AI} Safety Research},
+  author       = {{Anthropic}},
+  howpublished = {\url{https://www.anthropic.com/research/petri-open-source-auditing}},
+  year         = {2025},
+  month        = oct,
+  note         = {Parallel Exploration Tool for Risky Interactions. Released
+                  2025-10-06 with 111 seed instructions, applied to 14 frontier
+                  models. Built on Inspect. Originally at
+                  \texttt{github.com/safety-research/petri}, which now redirects to
+                  \texttt{meridianlabs-ai/inspect\_petri}.}
+}                                                                    % [OK] VERIFIED 2026-07-26
+
+% ---------------------------------------------------------------------------
+% Reward hacking, specification gaming, measurement failure
+% ---------------------------------------------------------------------------
+
+@misc{amodei2016concrete,
+  title  = {Concrete Problems in {AI} Safety},
+  author = {Amodei, Dario and Olah, Chris and Steinhardt, Jacob and Christiano,
+            Paul and Schulman, John and Man{\'e}, Dan},
+  year   = {2016},
+  eprint = {1606.06565},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI}
+}                                                                    % [OK]
+
+@inproceedings{skalse2022reward,
+  title     = {Defining and Characterizing Reward Gaming},
+  author    = {Skalse, Joar and Howe, Nikolaus H. R. and Krasheninnikov, Dmitrii
+               and Krueger, David},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year      = {2022}
+}                                                                    % [OK]
+
+@misc{krakovna2020specification,
+  title        = {Specification Gaming: The Flip Side of {AI} Ingenuity},
+  author       = {Krakovna, Victoria and Uesato, Jonathan and Mikulik, Vladimir
+                  and Rahtz, Matthew and Everitt, Tom and Kumar, Ramana and
+                  Kenton, Zac and Leike, Jan and Legg, Shane},
+  howpublished = {DeepMind blog},
+  year         = {2020}
+}                                                                    % [OK]
+
+@misc{manheim2019goodhart,
+  title  = {Categorizing Variants of {Goodhart's Law}},
+  author = {Manheim, David and Garrabrant, Scott},
+  year   = {2019},
+  eprint = {1803.04585},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI}
+}                                                                    % [OK]
+
+@inproceedings{bowman2021dangers,
+  title     = {What Will It Take to Fix Benchmarking in Natural Language
+               Understanding?},
+  author    = {Bowman, Samuel R. and Dahl, George E.},
+  booktitle = {NAACL-HLT},
+  year      = {2021}
+}                                                                    % [OK]
+
+@misc{roth2026hackverifiable,
+  title  = {Hack-Verifiable Environments: Towards Evaluating Reward Hacking at Scale},
+  author = {Roth, Amit and Samanta, Ankur and Halevy, Matan and Levine, Yoav and
+            Efroni, Yonathan},
+  year   = {2026},
+  month  = may,
+  eprint = {2605.20744},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG},
+  note   = {Tel Aviv University, Columbia University, Taso Labs.
+            Code: \url{https://github.com/MajoRoth/hack-verifiable-environments/}.
+            Closest prior work: introduces verifiable-by-construction measurement
+            of reward hacking, two months before this work. Evaluation only, no
+            training. See Section 7.}
+}                                                                    % [OK] read directly from the PDF 2026-07-24
+
+% ---------------------------------------------------------------------------
+% Evaluation integrity at the frontier  (the demand-side evidence in Sections 1 and 6)
+% ---------------------------------------------------------------------------
+
+@misc{metr2025horizons,
+  title  = {Measuring {AI} Ability to Complete Long Software Tasks},
+  author = {Kwa, Thomas and West, Ben and Becker, Joel and Deng, Amy and
+            Garcia, Katharyn and Hasin, Max and Jawhar, Sami and
+            Kinniment, Megan and Rush, Nate and Von Arx, Sydney and others},
+  year   = {2025},
+  eprint = {2503.14499},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  note   = {METR. Originally titled ``Measuring AI Ability to Complete Long
+            Tasks''; retitled in a later revision. Cited version: v4,
+            2026-07-10.}
+}                                                                    % [OK] verified 2026-07-27 against the arXiv API; title changed upstream after v1
+
+@misc{metr2026frontierrisk,
+  title        = {Frontier Risk Report},
+  author       = {{METR}},
+  howpublished = {\url{https://metr.org/blog/2026-05-19-frontier-risk-report/}},
+  year         = {2026},
+  note         = {Source of the reported figure that at least 16\% of successful
+                  runs on tasks exceeding 8 hours were illegitimate on review,
+                  and that tasks were removed because cheating made them
+                  uninformative.}
+}                                                                    % [OK] VERIFIED 2026-07-24 against the live page. All three quotes confirmed verbatim.
+
+@misc{metr2025malt,
+  title        = {{MALT}: A Dataset of Natural and Prompted Behaviors That
+                  Threaten Eval Integrity},
+  author       = {Parikh, Neev and Wijk, Hjalmar},
+  howpublished = {\url{https://metr.org/blog/2025-10-14-malt-dataset-of-natural-and-prompted-behaviors/}},
+  year         = {2025},
+  month        = oct,
+  note         = {METR. MALT = Manually-reviewed Agentic Labeled Transcripts.
+                  Published 2025-10-14. 10,919 transcripts across 403 tasks and
+                  21 models. Dataset release, not a paper; no arXiv version
+                  exists.}
+}                                                                    % [OK] verified 2026-07-27 against the METR blog post and the HuggingFace dataset
+
+@misc{meinke2025scheming,
+  title  = {Frontier Models are Capable of In-Context Scheming},
+  author = {Meinke, Alexander and Schoen, Bronson and Scheurer, J{\'e}r{\'e}my
+            and Balesni, Mikita and Shah, Rusheb and Hobbhahn, Marius},
+  year   = {2024},
+  eprint = {2412.04984},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  note   = {Apollo Research}
+}                                                                    % [OK]
+
+@misc{scheurer2023insider,
+  title  = {Large Language Models Can Strategically Deceive Their Users When Put
+            Under Pressure},
+  author = {Scheurer, J{\'e}r{\'e}my and Balesni, Mikita and Hobbhahn, Marius},
+  year   = {2023},
+  eprint = {2311.07590},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}                                                                    % [OK]
+
+@misc{greenblatt2024control,
+  title  = {{AI} Control: Improving Safety Despite Intentional Subversion},
+  author = {Greenblatt, Ryan and Shlegeris, Buck and Sachan, Kshitij and Roger,
+            Fabien},
+  year   = {2024},
+  eprint = {2312.06942},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}                                                                    % [OK]
+
+% ---------------------------------------------------------------------------
+% Training stack  (Section 5)
+% ---------------------------------------------------------------------------
+
+@misc{qwen2025technical,
+  title  = {{Qwen2.5} Technical Report},
+  author = {{Qwen Team}},
+  year   = {2024},
+  eprint = {2412.15115},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}                                                                    % [OK]
+
+@misc{shao2024deepseekmath,
+  title  = {{DeepSeekMath}: Pushing the Limits of Mathematical Reasoning in Open
+            Language Models},
+  author = {Shao, Zhihong and Wang, Peiyi and Zhu, Qihao and Xu, Runxin and
+            Song, Junxiao and Bi, Xiao and Zhang, Haowei and Zhang, Mingchuan
+            and Li, Y. K. and Wu, Y. and Guo, Daya},
+  year   = {2024},
+  eprint = {2402.03300},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note   = {Introduces GRPO, the optimizer used in Section 5}
+}                                                                    % [OK]
+
+@misc{vonwerra2020trl,
+  title        = {{TRL}: Transformer Reinforcement Learning},
+  author       = {von Werra, Leandro and Belkada, Younes and Tunstall, Lewis and
+                  Beeching, Edward and Thrush, Tristan and Lambert, Nathan and
+                  Huang, Shengyi and Rasul, Kashif and Gallou{\'e}dec, Quentin},
+  howpublished = {\url{https://github.com/huggingface/trl}},
+  year         = {2020}
+}                                                                    % [OK]
+
+@misc{lambert2024tulu3,
+  title  = {{T\"ULU} 3: Pushing Frontiers in Open Language Model Post-Training},
+  author = {Lambert, Nathan and Morrison, Jacob and Pyatkin, Valentina and
+            Huang, Shengyi and Ivison, Hamish and Brahman, Faeze and others},
+  year   = {2024},
+  eprint = {2411.15124},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL},
+  note   = {Reinforcement learning with verifiable rewards (RLVR)}
+}                                                                    % [OK]
+
+% ---------------------------------------------------------------------------
+% Benchmark validity
+% ---------------------------------------------------------------------------
+
+@inproceedings{recht2019imagenet,
+  title     = {Do {ImageNet} Classifiers Generalize to {ImageNet}?},
+  author    = {Recht, Benjamin and Roelofs, Rebecca and Schmidt, Ludwig and
+               Shankar, Vaishaal},
+  booktitle = {International Conference on Machine Learning},
+  year      = {2019}
+}                                                                    % [OK]
+
+% ---------------------------------------------------------------------------
+% REMOVED from the phase-1 bib, with reasons
+% ---------------------------------------------------------------------------
+% kearney2026sidechannel / kearney2026verbosity / kearney2026grokking
+%   CUT 2026-07-24, decided. Off-topic self-citations to unrelated prior work.
+%   No claim in this paper rests on any of them. A bib padded with the author's
+%   own unrelated preprints is noticed and costs more credibility than the
+%   citations buy. The superseded phase-1 paper still cites two of them; that
+%   file is an archived artifact and is left as published.
+% zhang2024cybench
+%   CyBench is not in the current audit scope. Restore only if cited.
+% meinke2024rebench
+%   RE-Bench is not audited here. Restore only if cited.
+
+% ---------------------------------------------------------------------------
+% PRIOR ART (see POSITIONING.md). All cited in the paper.
+% ---------------------------------------------------------------------------
+
+@misc{shi2024judgeinjection,
+  title  = {Optimization-based Prompt Injection Attack to {LLM}-as-a-Judge},
+  author = {Shi, Jiawen and Yuan, Zenghui and Liu, Yinuo and Huang, Yue and
+            Zhou, Pan and Sun, Lichao and Gong, Neil Zhenqiang},
+  year   = {2024},
+  eprint = {2403.17710},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR},
+  note   = {JudgeDeceiver. ETB-01 as a phenomenon predates this work by two
+            years; our contribution is prevalence, not discovery.}
+}
+
+@misc{maloyan2025judgeinjection,
+  title  = {Investigating the Vulnerability of {LLM}-as-a-Judge Architectures to
+            Prompt-Injection Attacks},
+  author = {Maloyan, Narek and Ashinov, Bislan and Namiot, Dmitry},
+  year   = {2025},
+  eprint = {2505.13348},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}
+
+@misc{tong2025badjudge,
+  title  = {{BadJudge}: Backdoor Vulnerabilities of {LLM}-as-a-Judge},
+  author = {Tong, Terry and Wang, Fei and Zhao, Zhe and Chen, Muhao},
+  year   = {2025},
+  eprint = {2503.00596},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CR}
+}
+
+@misc{li2025cannotjudge,
+  title  = {{LLMs} Cannot Reliably Judge (Yet?): A Comprehensive Assessment on
+            the Robustness of {LLM}-as-a-Judge},
+  author = {Li, Songze and Xu, Chuokun and Wang, Jiaying and Gong, Xueluan and
+            Chen, Chen and Zhang, Jirui and Wang, Jun and Lam, Kwok-Yan and
+            Ji, Shouling},
+  year   = {2025},
+  eprint = {2506.09443},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.CL}
+}
+
+@misc{ray2026fuzzing,
+  title  = {Before the Model Learns the Bug: Fuzzing {RLVR} Verifiers},
+  author = {Ray, Jaideep},
+  year   = {2026},
+  eprint = {2606.01066},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@misc{helff2026gamingverifiers,
+  title  = {{LLMs} Gaming Verifiers: {RLVR} can Lead to Reward Hacking},
+  author = {Helff, Lukas and Delfosse, Quentin and Steinmann, David and
+            H{\"a}rle, Ruben and Shindo, Hikaru and Schramowski, Patrick and
+            Stammer, Wolfgang and Kersting, Kristian and Friedrich, Felix},
+  year   = {2026},
+  eprint = {2604.15149},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@inproceedings{gao2023scaling,
+  title     = {Scaling Laws for Reward Model Overoptimization},
+  author    = {Gao, Leo and Schulman, John and Hilton, Jacob},
+  booktitle = {International Conference on Machine Learning},
+  year      = {2023}
+}
+
+@misc{rafailov2024scaling,
+  title  = {Scaling Laws for Reward Model Overoptimization in Direct Alignment
+            Algorithms},
+  author = {Rafailov, Rafael and Chittepu, Yaswanth and Park, Ryan and others},
+  year   = {2024},
+  eprint = {2406.02900},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@misc{survey2026rewardhacking,
+  title  = {Reward Hacking in the Era of Large Models: Mechanisms, Emergent
+            Misalignment, Challenges},
+  author = {Wang, Xiaohua and Tian, Muzhao and Zeng, Yuqi and Huang, Zisu and
+            Yuan, Jiakang and Chen, Bowen and Xu, Jingwen and Zhou, Mingbo and
+            Liu, Wenhao and Wu, Muling and Guo, Zhengkang and Qian, Qi and
+            Wang, Yifei and Zhang, Feiran and Yin, Ruicheng and Dou, Shihan and
+            Lv, Changze and Chen, Tao and Song, Kaitao and Tan, Xu and
+            Gui, Tao and Zheng, Xiaoqing and Huang, Xuanjing},
+  year   = {2026},
+  eprint = {2604.13602},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.LG}
+}
+
+@inproceedings{chen2024odin,
+  title     = {{ODIN}: Disentangled Reward Mitigates Hacking in {RLHF}},
+  author    = {Chen, Lichang and Zhu, Chen and Soselia, Davit and Chen, Jiuhai
+               and Zhou, Tianyi and Goldstein, Tom and Huang, Heng and
+               Shoeybi, Mohammad and Catanzaro, Bryan},
+  booktitle = {International Conference on Machine Learning},
+  year      = {2024}
+}
+
+@inproceedings{coste2024ensembles,
+  title     = {Reward Model Ensembles Help Mitigate Overoptimization},
+  author    = {Coste, Thomas and Anwar, Usman and Kirk, Robert and Krueger, David},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2024}
+}

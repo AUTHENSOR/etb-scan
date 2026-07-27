@@ -1,0 +1,73 @@
+% Academic preamble for The Evaluator Trust Boundary.
+%
+% Injected on top of pandoc's default LaTeX template with --include-in-header,
+% rather than replacing the template. Pandoc's machinery (longtable, tightlist,
+% graphics scaling, hyperref setup) keeps working; this only sets typography.
+%
+% Single column deliberately. The paper carries several wide comparison tables
+% (the threat-model table in 7.1, the Roth comparison in 7.2) that would have to
+% be broken or rotated in a two-column measure.
+
+\usepackage{etoolbox}
+\usepackage{titling}   % \pretitle / \preauthor / \predate
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage[font=small,labelfont=bf,width=0.9\textwidth]{caption}
+\usepackage{abstract}
+
+% --- measure -------------------------------------------------------------
+% 11pt on a ~6.1in measure gives roughly 75 characters per line, which is the
+% range typographic convention puts at most readable for continuous prose.
+\usepackage[letterpaper,margin=1.15in,top=1.1in,bottom=1.1in]{geometry}
+\linespread{1.05}
+\setlength{\parskip}{0.4\baselineskip}
+\setlength{\parindent}{0pt}
+
+% --- title block ---------------------------------------------------------
+\pretitle{\begin{center}\LARGE\bfseries}
+\posttitle{\par\end{center}\vskip 0.3em}
+\preauthor{\begin{center}\large}
+\postauthor{\par\end{center}}
+\predate{\begin{center}\normalsize}
+\postdate{\par\end{center}\vskip 1em}
+
+% --- abstract ------------------------------------------------------------
+% Inset from both margins and set a size down, so it reads as a summary of the
+% paper rather than as its first section.
+\renewcommand{\abstractnamefont}{\normalfont\bfseries\normalsize}
+\renewcommand{\abstracttextfont}{\normalfont\small}
+\setlength{\absleftindent}{0.4in}
+\setlength{\absrightindent}{0.4in}
+
+% --- sections ------------------------------------------------------------
+\titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
+\titlespacing*{\section}{0pt}{1.6\baselineskip}{0.5\baselineskip}
+\titlespacing*{\subsection}{0pt}{1.1\baselineskip}{0.35\baselineskip}
+
+% --- running head --------------------------------------------------------
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape The Evaluator Trust Boundary}
+\fancyhead[R]{\small\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\fancypagestyle{plain}{\fancyhf{}\renewcommand{\headrulewidth}{0pt}%
+  \fancyfoot[C]{\small\thepage}}
+
+% --- tables --------------------------------------------------------------
+% This paper's tables are wide and dense. Dropping them a size keeps them
+% inside the measure without rotating or splitting any of them.
+\AtBeginEnvironment{longtable}{\small}
+\AtBeginEnvironment{table}{\small}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.15}
+
+% --- figures -------------------------------------------------------------
+\AtBeginEnvironment{figure}{\centering}
+
+% Discourage LaTeX from floating figures far from their reference; the figures
+% here are read alongside the paragraph that introduces them.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.1}
+\renewcommand{\floatpagefraction}{0.8}

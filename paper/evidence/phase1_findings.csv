@@ -1,0 +1,48 @@
+id,title,repo,severity,category,status
+VULN-0031,Operator precedence bug in banking injection scoring causes false positives,agentdojo,Critical,Scorer Gaming,open
+VULN-0032,tool_filter bypassable by injecting tool names into filter LLM context,agentdojo,High,Defense Bypass,open
+VULN-0033,tool_filter uses substring matching allowing collision-based includes,agentdojo,High,Defense Bypass,open
+VULN-0034,tool_filter runs once with no re-evaluation during tool execution loop,agentdojo,Medium,Defense Bypass,open
+VULN-0022,String-matching classification trivially bypassable by formatting changes,apollo,Critical,Classifier Gaming,open
+VULN-0023,15+ eval awareness signals create reliable detection fingerprint,apollo,High,Eval Awareness,open
+VULN-0024,Only 3 scenario variants enable memorization-based evasion,apollo,High,Scenario Gaming,open
+VULN-0007,Monitor prompt injection via unsanitized tool call arguments,control-arena,Critical,Monitor Evasion,confirmed-by-maintainer
+VULN-0008,Default monitor evaluates only last tool call (insecure default; declared by-design by maintainer — custom PromptFormatter available but not default),control-arena,High,Monitor Evasion,by-design
+VULN-0009,No cross-step suspicion accumulation (insecure default; declared by-design by maintainer — prior scores accessible via message metadata but not used by default formatter),control-arena,High,Monitor Evasion,by-design
+VULN-0010,Trusted model inherits poisoned filesystem artifacts,control-arena,High,Defense Bypass,open
+VULN-0011,Side task TOCTOU gap allows cleanup before scoring,control-arena,High,Scorer Gaming,open
+VULN-0012,BashArena setting runs with no sandbox isolation,control-arena,High,Sandbox Escape,open
+VULN-0044,Agent receives plaintext flag on subtask timeout,cybench,Critical,Scorer Gaming,open
+VULN-0045,Flags stored in plaintext in metadata.json accessible to agent,cybench,Critical,Scorer Gaming,open
+VULN-0046,Grading uses substring match allowing flag extraction from noisy output,cybench,High,Scorer Gaming,open
+VULN-0047,No methodology validation -- only flag presence checked,cybench,High,Scorer Gaming,open
+VULN-0048,Answer format field reveals flag structure enabling brute-force,cybench,Medium,Scorer Gaming,open
+VULN-0025,GPT-4 judge score injection via unsanitized model output,decodingtrust,Critical,Scorer Gaming,open
+VULN-0026,Keyword-based harmfulness eval allows harmful content with refusal prefix,decodingtrust,High,Scorer Gaming,open
+VULN-0027,Stereotype scoring uses substring matching gameable by semantic inversion,decodingtrust,High,Scorer Gaming,open
+VULN-0028,Static AdvGLUE++ dataset with method tags enables adversarial fingerprinting,decodingtrust,High,Eval Awareness,open
+VULN-0029,All 8 perspectives use hardcoded keyword lists for classification,decodingtrust,High,Scorer Gaming,open
+VULN-0030,Privacy prompts explicitly signal evaluation context,decodingtrust,Medium,Eval Awareness,open
+VULN-0039,Judge prompt injection via unsanitized target response in evaluation.py,garak,Critical,Scorer Gaming,open
+VULN-0040,User-Agent header self-identifies as Garak vulnerability scanner,garak,Critical,Eval Awareness,open
+VULN-0041,Explicit garak injection markers in probe tokens,garak,High,Eval Awareness,open
+VULN-0042,179+ static probe prompts from public datasets enable memorization-based evasion,garak,High,Eval Awareness,open
+VULN-0043,Calibration data exposes expected detector score thresholds,garak,Medium,Eval Awareness,open
+VULN-0019,Classifier prompt injection via unsanitized model completions,harmbench,Critical,Classifier Gaming,open
+VULN-0020,TAP and PAIR judges vulnerable to same injection class,harmbench,High,Classifier Gaming,open
+VULN-0021,No agent-specific or tool-calling behaviors in coverage,harmbench,Medium,Coverage Gap,open
+VULN-0001,Judge prompt injection via unsanitized model output,inspect-ai,Critical,Scorer Gaming,confirmed-by-contributor
+VULN-0002,Local sandbox leaks all host environment variables to evaluated model,inspect-ai,High,Sandbox Escape,open
+VULN-0003,Self-grading default when no grader model specified,inspect-ai,High,Scorer Gaming,open
+VULN-0004,INSPECT_ env vars enable instant eval detection,inspect-ai,High,Eval Awareness,open
+VULN-0006,Unrestricted eval introspection via bash and python tools,inspect-ai,High,Information Leakage,open
+VULN-0013,Scaling law task has hardcoded ground truth loss equation readable by agent,metr,Critical,Scoring Gaming,open
+VULN-0014,Scoring code accessible from agent container across all tasks,metr,Critical,Scoring Gaming,open
+VULN-0015,Local research tasks have hardcoded answers in readable Python source,metr,High,Scoring Gaming,open
+VULN-0016,Hypothesis testing regex allows trivial score gaming,metr,High,Scoring Gaming,open
+VULN-0017,Torch restriction bypass in restricted MLM via pre-computation,metr,High,Scoring Gaming,open
+VULN-0018,METR container fingerprinting enables eval awareness,metr,Medium,Eval Awareness,open
+VULN-0035,Scorer prompt injection via unsanitized target output in 7+ LLM scorers,pyrit,Critical,Scorer Gaming,open
+VULN-0036,Format string injection in general scorers via .format with target output,pyrit,High,Scorer Gaming,open
+VULN-0037,No response sanitization between target and scorer pipeline,pyrit,High,Scorer Gaming,open
+VULN-0038,Converter chain allows unlimited obfuscation with no inter-stage validation,pyrit,Medium,Defense Bypass,open

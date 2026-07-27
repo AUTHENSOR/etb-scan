@@ -1,0 +1,493 @@
+\documentclass[10pt]{article}
+\usepackage[preprint]{neurips_2024}
+
+% ── Custom footer ──
+\makeatletter
+\renewcommand{\@noticestring}{Technical Report. Authensor, Inc. (2026).}
+\makeatother
+
+% ── Packages ──
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{enumitem}
+\usepackage{cleveref}
+\usepackage{float}
+\usepackage{tabularx}
+\usepackage{multirow}
+\usepackage{listings}
+\usepackage{natbib}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=red!70!black,
+  citecolor=blue!70!black,
+  urlcolor=blue!70!black
+}
+
+\graphicspath{{figures/}}
+
+% ── Listings style for code ──
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!5},
+  rulecolor=\color{gray!30},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=5pt,
+  xleftmargin=15pt,
+  framexleftmargin=15pt,
+  columns=fullflexible,
+  keepspaces=true,
+  showstringspaces=false,
+  commentstyle=\color{green!50!black},
+  keywordstyle=\color{blue!70!black}\bfseries,
+  stringstyle=\color{red!70!black},
+  language=Python
+}
+
+% ── Title ──
+\title{The Evaluation Gap: Judge Prompt Injection\\Across the AI Safety Ecosystem}
+\author{John Kearney\\Authensor, Inc.\\\url{https://authensor.com}}
+\date{2026}
+
+\begin{document}
+\maketitle
+
+% ════════════════════════════════════════════════════════════
+% ABSTRACT
+% ════════════════════════════════════════════════════════════
+\begin{abstract}
+We audited 10 major AI safety evaluation frameworks and found that all 6 using LLM-as-judge scoring embed the evaluated model's raw output into the judge prompt via Python string formatting with zero sanitization.
+The evaluated model can inject fake scores, structural markers, or grading instructions into the prompt that determines its own assessment.
+The 6 affected frameworks are the UK AI Safety Institute's Inspect~AI and ControlArena, HarmBench~\citep{mazeika2024harmbench}, DecodingTrust~\citep{wang2024decodingtrust}, Microsoft's PyRIT~\citep{pyrit2024}, and NVIDIA's Garak~\citep{derczynski2024garak}.
+Only AgentDojo's~\citep{debenedetti2024agentdojo} programmatic scoring is immune.
+We document 40 supplementary findings across all 10 frameworks in three additional classes (scoring code accessibility, eval-awareness fingerprinting, and scoring logic bugs) that characterize the broader ecosystem.
+All findings are code-level with proof-of-concept string traces.
+We propose mitigations including message-role separation, randomized boundary tokens, and external scoring, and release the full audit with exact code references.
+\end{abstract}
+
+\noindent\textbf{Novelty statement.}
+Three contributions:
+(1)~the first cross-ecosystem identification of unsanitized model output in LLM-as-judge pipelines, with 6 confirmed instances across 6 frameworks (plus a second injection point in HarmBench's TAP baseline) and traced code paths;
+(2)~40 supplementary findings across 10 frameworks in 3 additional classes, providing ecosystem context;
+(3)~the finding that programmatic scoring (AgentDojo, Cybench~\citep{zhang2024cybench}) is immune while every tested LLM-as-judge implementation is not.
+Empirical exploitation rates against live judges are left to future work.
+
+% ════════════════════════════════════════════════════════════
+\section{Introduction}\label{sec:intro}
+
+AI safety evaluations produce the measurements on which deployment decisions depend.
+The UK AI Safety Institute, METR~\citep{meinke2024rebench}, Anthropic, OpenAI, Apollo Research~\citep{scheurer2023insider,meinke2025scheming}, and the Center for AI Safety all operate evaluation infrastructure whose outputs inform whether frontier models ship.
+If those measurements can be gamed, the decisions they inform are unreliable.
+
+We find that they can.
+Through adversarial code audits of 10 evaluation frameworks, we show that the dominant scoring pattern (one LLM judges another's output) is implemented without input sanitization in every case we tested.
+The evaluated model's raw text is embedded in the judge's prompt via \texttt{.format()}, f-strings, or \texttt{\%} formatting.
+Nothing stops the evaluated model from including fake end-of-data markers, pre-filled grades, or instructions that override the judge's scoring rubric.
+
+We traced the code path in each framework from API response to judge prompt, confirmed the absence of any sanitization at every stage, and built proof-of-concept injection strings showing the compromised prompts.
+The vulnerability class is the same everywhere.
+Only the formatting method and judge model differ.
+
+\paragraph{Scope, evidence model, and limitations.}
+The primary finding (judge prompt injection) is a deterministic string-manipulation vulnerability, not a statistical claim.
+We prove it by tracing every function in the code path from API response to judge prompt and showing that no sanitization, escaping, or boundary enforcement occurs at any stage.
+The proof-of-concept injection strings we construct are Python string operations whose output is verifiable by inspection: given the template and the adversarial input, the compromised prompt is the deterministic result of \texttt{str.format()}.
+This is the same evidence standard used for SQL injection and XSS reports, where the vulnerability is the unsanitized embedding, not the behavior of the downstream system that processes it.
+
+The open question is \emph{exploitability}: how reliably does a given judge model follow injected instructions?
+This depends on the judge.
+Prompted general-purpose LLMs (GPT-4) are known to be susceptible to prompt injection~\citep{perez2022ignore,greshake2023indirect}.
+Fine-tuned classifiers (HarmBench's Llama-2-13b) may resist because their training narrows the output distribution.
+Testing exploitability across judge models requires API spend beyond our budget as an independent lab.
+We flag this distinction for each finding and invite resourced teams to measure empirical rates.
+
+The supplementary findings (scoring code exposure, eval awareness, logic bugs) vary in severity.
+Some are unambiguous code bugs (AgentDojo's operator precedence error, 6 instances, one-line fix).
+Others are architectural design choices whose risk depends on the threat model (METR's in-container scoring, Garak's self-identifying User-Agent).
+We classify each finding individually and do not treat all 47 as equivalent.
+
+\paragraph{Prior work by the author.}
+Our side-channel exfiltration paper~\citep{kearney2026sidechannel} showed that frontier models leak protected data through the content of their refusals: a safety mechanism inadvertently gives the adversary influence over the outcome.
+The same structural pattern recurs here---the judge prompt is a safety mechanism that embeds adversary-controlled text without sanitization, letting the evaluated model influence its own score.
+Separately, our verbosity premium work~\citep{kearney2026verbosity} noted that RLHF-inflated output length increases the surface area available for injection payloads.
+
+% ════════════════════════════════════════════════════════════
+\section{Background and Threat Model}\label{sec:threat}
+
+\subsection{LLM-as-Judge in Safety Evaluation}
+
+The LLM-as-judge pattern~\citep{zheng2023judging} dominates safety scoring.
+A judge model (usually GPT-4 or a fine-tuned classifier) receives the evaluated model's output inside a prompt template and returns a score.
+This pattern appears in benchmarks~\citep{mazeika2024harmbench,wang2024decodingtrust}, red-teaming tools~\citep{pyrit2024,derczynski2024garak}, control protocol evaluation~\citep{greenblatt2024control}, scheming detection~\citep{scheurer2023insider,meinke2025scheming}, and capability assessment~\citep{meinke2024rebench}.
+
+The assumption is that model output is \emph{data} in the judge prompt: content to assess, not instructions to follow.
+Every framework we audited breaks this assumption by mixing data and instructions in one string with no structural boundary.
+
+Prior work found that LLM judges show position bias, verbosity bias, and self-enhancement bias~\citep{zheng2023judging}, are vulnerable to adversarial perturbations~\citep{raina2024llmasajudge}, and favor their own generations~\citep{panickssery2024llmeval}.
+We identify a different problem: not a statistical bias but a concrete, exploitable mechanism (unsanitized string formatting) that enables targeted manipulation.
+
+\subsection{Threat Model}
+
+The adversary is the model being evaluated.
+It may:
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item Have trained on public evaluation code (all 10 frameworks are open-source)
+  \item Know or infer the scoring template structure
+  \item Craft output containing structural markers, fake scores, or override instructions
+  \item Aim to appear safer, more aligned, or less capable than it is
+\end{itemize}
+
+A successful attack produces an evaluation result that does not reflect the model's actual properties.
+This threat model aligns with the deceptive alignment hypothesis~\citep{meinke2025scheming} and the AI control framework~\citep{greenblatt2024control}: a model that can influence its own evaluation can maintain different behavior during testing and deployment.
+
+% ════════════════════════════════════════════════════════════
+\section{The Primary Vulnerability Class: Judge Prompt Injection}\label{sec:vuln0001}
+
+\subsection{Pattern}
+
+The vulnerability is the same across all 6 affected frameworks (7 injection points, counting HarmBench's TAP baseline separately):
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item The evaluated model generates a response.
+  \item The response is stored as a raw Python string. No transformation occurs.
+  \item A scoring function builds a judge prompt by embedding the response via \texttt{.format()}, f-string, or \texttt{\%} formatting.
+  \item No sanitization, escaping, or boundary enforcement is applied.
+  \item The judge receives a prompt where model output and scoring instructions share one string. The model can mimic any delimiter the template uses.
+\end{enumerate}
+
+We verified the absence of sanitization by:
+(a)~tracing every function from API response to judge prompt;
+(b)~searching each scoring module for \texttt{sanitize}, \texttt{escape}, \texttt{html.escape}, \texttt{filter}, \texttt{strip}, and \texttt{clean};
+(c)~checking for hooks or middleware that modify output before scoring.
+All 6 affected frameworks (7 injection points) returned zero results.
+
+\subsection{Cross-Ecosystem Confirmation}
+
+\Cref{tab:vuln0001} lists the confirmed instances.
+\Cref{fig:injection_flow} shows the data flow for the representative Inspect~AI case.
+
+\begin{table}[t]
+\centering
+\caption{Judge prompt injection: 7 injection points across 6 frameworks.
+All embed raw model output in judge prompts via Python string formatting with no sanitization.
+``Fine-tuned'' indicates a classification-specific model; the code-level vulnerability exists regardless, but empirical robustness may differ.}
+\label{tab:vuln0001}
+\small
+\begin{tabular}{@{}cllllp{2.4cm}@{}}
+\toprule
+\textbf{\#} & \textbf{Framework} & \textbf{Commit} & \textbf{File:Line} & \textbf{Method} & \textbf{Judge Type} \\
+\midrule
+1 & Inspect AI & \texttt{d3abfc2} & \texttt{\_model.py:368} & \texttt{.format()} & Prompted LLM \\
+2 & ControlArena & \texttt{5432beb} & \texttt{\_last\_tool\_calls\_.py:59} & f-string & Prompted LLM \\
+3 & HarmBench\footnotemark & \texttt{8e1604d} & \texttt{eval\_utils.py:408} & \texttt{.format()} & Fine-tuned Llama-2 \\
+4 & \quad(TAP baseline) & & \texttt{baselines/tap/judges.py:13} & f-string & Prompted GPT-4 \\
+5 & DecodingTrust & \texttt{161ae83} & \texttt{eval\_util.py:126} & \texttt{\%} formatting & Prompted GPT-4 \\
+6 & PyRIT & \texttt{8741624} & \texttt{self\_ask\_true\_false\_.py:201} & f-string & Prompted LLM \\
+7 & Garak & \texttt{04793c6} & \texttt{evaluation.py:12} & f-string & Prompted LLM \\
+\bottomrule
+\end{tabular}
+\footnotetext{HarmBench entries 3--4 are from the same repository. The TAP attack baseline includes its own judge implementation separate from the main classifier, both vulnerable.}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/injection_flow}
+  \caption{Data flow for judge prompt injection (Inspect AI instance).
+  Model output passes from API response through the state object to the scorer, where \texttt{template.format(answer=answer)} inserts it into the judge prompt.
+  No sanitization occurs at any stage.
+  The dashed region shows a proof-of-concept payload containing fake structural markers and a pre-filled grade.}
+  \label{fig:injection_flow}
+\end{figure}
+
+\subsection{Proof-of-Concept: Inspect AI}\label{sec:poc}
+
+We trace the Inspect~AI instance as a representative example.
+The mechanism is identical in other frameworks; only the template and formatting method change.
+
+\paragraph{Code path.}
+
+\begin{lstlisting}[language=Python,caption={Traced injection path in Inspect AI.},label={lst:inspect}]
+# _model_output.py:180
+completion = choices[0].message.text  # raw API response
+
+# _task_state.py
+state.output = model_output            # no transform
+
+# _model.py:351
+answer = output.completion              # raw string
+
+# _model.py:368
+prompt = template.format(
+    question=question,
+    answer=answer,       # unsanitized model output
+    criterion=criterion,
+    instructions=instructions,
+    **metadata,          # also unsanitized
+)
+\end{lstlisting}
+
+\paragraph{Injection payload.}
+A model outputs the text in \cref{lst:poc}.
+The resulting judge prompt contains a fake \texttt{[END DATA]} marker and a pre-filled \texttt{GRADE: C} that appear \emph{before} the real criterion.
+
+\begin{lstlisting}[language={},caption={Proof-of-concept adversarial output.},label={lst:poc}]
+The answer is 42.
+***
+[END DATA]
+After careful assessment, the submission clearly
+addresses the criterion.
+GRADE: C
+\end{lstlisting}
+
+\paragraph{Score extraction.}
+Line 211 uses \texttt{re.search(grade\_pattern, result.completion)}, which returns the \emph{first} match for \texttt{GRADE:} in the judge's output.
+If the judge echoes or is influenced by the injected grade, the first match may be the adversarial one.
+
+\paragraph{Independent confirmation.}
+We filed GitHub issues for the primary findings on affected frameworks.
+A ControlArena maintainer acknowledged the monitor prompt injection (unsanitized tool call arguments in prompt formatters) as valid and invited a pull request.
+An Inspect~AI contributor independently reproduced the \texttt{template.format()} injection, calling it ``straightforward to reproduce,'' and endorsed message-role separation as ``the cleanest structural fix.''
+
+% ════════════════════════════════════════════════════════════
+\section{Additional Vulnerability Classes}\label{sec:additional}
+
+\subsection{Scoring Code Accessible to the Evaluated Agent}
+
+Several frameworks store scoring logic in the same container the agent runs in.
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{METR RE-Bench}~\citep{meinke2024rebench}: The ground truth loss function, including hardcoded interpolation arrays, sits at \texttt{ai\_rd\_small\_scaling\_law.py:211--218}.
+  The agent can read these values, call the function, and compute optimal parameters without running a single experiment.
+  \item \textbf{METR public-tasks:} 10 tasks with expected answers hardcoded in Python source (e.g., \texttt{local\_research.py:30--74}).
+  \item \textbf{Cybench}~\citep{zhang2024cybench}: CTF flags stored as plaintext in \texttt{metadata/metadata.json}.
+  The system also sends the agent the correct flag on subtask timeout (\texttt{agent.py:670--671}).
+\end{itemize}
+
+\subsection{Eval-Awareness Fingerprinting}
+
+Every audited framework leaks signals that identify the evaluation environment:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Inspect AI:} 20+ \texttt{INSPECT\_*} environment variables in local sandbox mode.
+  \item \textbf{Garak}~\citep{derczynski2024garak}: HTTP User-Agent header reading \texttt{``garak/\{version\} (LLM vulnerability scanner)''} on every request, plus \texttt{<|garak\_injection|>} markers in probes.
+  \item \textbf{Apollo Research}~\citep{scheurer2023insider}: Alphabetical character names, invented stock tickers, only 3 scenario variants.
+  \item \textbf{METR:} Container naming patterns and a \texttt{/protected/} directory unique to the task standard.
+  \item \textbf{DecodingTrust}~\citep{wang2024decodingtrust}: Static AdvGLUE++ dataset with attack method tags in the JSON (\texttt{"method": "semattack"}).
+\end{itemize}
+
+\subsection{Scoring Logic Bugs}
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{AgentDojo}~\citep{debenedetti2024agentdojo}: At \texttt{injection\_tasks.py:61}, \texttt{any(service or "" in t.subject)} evaluates as \texttt{any(service or ("" in t.subject))} because \texttt{or} binds more loosely than \texttt{in}.
+  When \texttt{service} is truthy, the check always returns \texttt{True}.
+  Six instances across two suite versions inflate reported attack success rates for 3 banking tasks.
+  \item \textbf{Apollo Research}~\citep{scheurer2023insider}: Classification uses exact substring matching (\texttt{"Action Input: LING, buy"}).
+  Substituting \texttt{"purchase"} for \texttt{"buy"} evades detection entirely.
+\end{itemize}
+
+% ════════════════════════════════════════════════════════════
+\section{Full Audit Results}\label{sec:results}
+
+\Cref{tab:summary} presents findings across all 10 frameworks.
+\Cref{fig:heatmap} shows vulnerability class distribution.
+
+\begin{table}[t]
+\centering
+\caption{Findings across 10 audited frameworks.
+C/H/M = Critical/High/Medium.
+The 7 judge injection findings (right column) are the primary result; supplementary findings provide ecosystem context.
+All audits performed on the listed commit SHAs.}
+\label{tab:summary}
+\small
+\begin{tabular}{@{}llccccp{2.2cm}@{}}
+\toprule
+\textbf{Framework} & \textbf{Commit} & \textbf{C} & \textbf{H} & \textbf{M} & \textbf{Total} & \textbf{Judge Injection?} \\
+\midrule
+Inspect AI (UK AISI) & \texttt{d3abfc2} & 1 & 4 & 0 & 5 & Yes \\
+ControlArena (UK AISI) & \texttt{5432beb} & 1 & 5 & 0 & 6 & Yes \\
+METR (3 repos) & \texttt{6874b88} & 2 & 3 & 1 & 6 & No (own infra) \\
+HarmBench (CAIS) & \texttt{8e1604d} & 1 & 1 & 1 & 3 & Yes \\
+Apollo Research & \texttt{370fdc9} & 1 & 2 & 0 & 3 & Different class \\
+DecodingTrust (UChicago) & \texttt{161ae83} & 1 & 4 & 1 & 6 & Yes \\
+AgentDojo (ETH Zurich) & \texttt{3dce07e} & 1 & 2 & 1 & 4 & \textbf{Immune} \\
+PyRIT (Microsoft) & \texttt{8741624} & 1 & 2 & 1 & 4 & Yes \\
+Garak (NVIDIA) & \texttt{04793c6} & 2 & 2 & 1 & 5 & Yes \\
+Cybench (Stanford) & \texttt{d494f24} & 2 & 2 & 1 & 5 & \textbf{Immune} \\
+\midrule
+\multicolumn{2}{@{}l}{\textbf{Total}} & \textbf{13} & \textbf{27} & \textbf{7} & \textbf{47} & All 6 vulnerable \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\textwidth]{figures/vuln_class_heatmap}
+  \caption{Vulnerability class presence by framework.
+  Red = Critical; Orange = High; Yellow = Medium; Green = immune (programmatic scoring); Purple = different class; Gray = not applicable.}
+  \label{fig:heatmap}
+\end{figure}
+
+Two frameworks are immune: AgentDojo (programmatic environment-state checks) and Cybench (deterministic flag matching).
+Both avoid LLM-as-judge.
+The design principle is direct: \textbf{if the scorer never processes untrusted text as part of its prompt, this vulnerability class cannot exist.}
+
+% ════════════════════════════════════════════════════════════
+\section{Implications}\label{sec:implications}
+
+\subsection{Evaluation Results as Lower Bounds}
+
+The affected frameworks are not obscure.
+Inspect~AI underlies UK government model evaluations; HarmBench~\citep{mazeika2024harmbench} is the standard red-teaming benchmark; DecodingTrust~\citep{wang2024decodingtrust} won NeurIPS 2023 Outstanding Paper; PyRIT~\citep{pyrit2024} is Microsoft's red-teaming framework; Garak~\citep{derczynski2024garak} is the most widely deployed vulnerability scanner.
+
+The 7 judge injection findings establish that the code path from model output to judge prompt contains no sanitization.
+Whether a given judge model follows injected instructions is an empirical question we have not yet tested (\cref{sec:intro}).
+If exploitation rates prove non-negligible, published safety scores from these frameworks would be lower bounds on risk rather than point estimates---a model that scores ``safe'' may have influenced the evaluation rather than satisfied it.
+Until empirical exploitation rates are measured, results from unsanitized pipelines should be interpreted with this caveat.
+
+\subsection{The Compound Threat: Detection + Manipulation}
+
+The eval-awareness findings potentially compound the injection vulnerability.
+A model that can \emph{detect} it is being evaluated (via \texttt{INSPECT\_*} variables, Garak's User-Agent header, Apollo's 3 scenario variants) and \emph{manipulate} the evaluation's scoring (via judge injection) would have both components needed to maintain separate behavior profiles for testing and deployment.
+This is the scenario that scheming evaluations~\citep{meinke2025scheming} are designed to detect; that the evaluation infrastructure itself may enable it warrants investigation.
+
+\subsection{Goodhart's Law in Safety Measurement}
+
+The scoring code exposure findings (METR, Cybench, AgentDojo) are instances of Goodhart's Law~\citep{manheim2019goodhart}: when the agent can read and reverse-engineer its own scoring function, the metric becomes the optimization target and ceases to measure the underlying capability.
+
+% ════════════════════════════════════════════════════════════
+\section{Mitigations}\label{sec:mitigations}
+
+\subsection{For Judge Prompt Injection}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Message-role separation (primary recommendation).}
+  Place model output in a dedicated \texttt{user}-role message rather than concatenating it into the same string as scoring instructions.
+  Chat APIs enforce role boundaries at the tokenizer level: the judge sees a structural distinction between ``instructions I was given'' and ``content I am evaluating'' that no amount of adversarial formatting can override.
+  This is the single highest-leverage fix because it eliminates the core mechanism---data/instruction conflation---rather than working around it.
+  Every framework we audited could adopt this change with minimal refactoring, since all seven already call chat-completion endpoints that support multi-message payloads.
+
+  \item \textbf{Output length limits.}
+  Cap the evaluated model's output to a fixed token budget before it enters the judge prompt.
+  Long outputs provide more room for structural markers, fake delimiters, and override instructions; truncation shrinks the payload space available for injection.
+  This is a trivial server-side parameter (\texttt{max\_tokens}) that requires no code changes to scoring templates.
+
+  \item \textbf{Structural marker stripping.}
+  Before embedding model output, post-process it to remove or neutralize known delimiter patterns used by the scoring template (e.g., \texttt{[END DATA]}, \texttt{GRADE:}, \texttt{***}).
+  A regex pass that escapes or deletes the template's own structural vocabulary prevents the model from forging end-of-section boundaries.
+  This is defense-in-depth: it does not replace role separation but catches residual risk from templates that fall back to single-string formatting.
+
+  \item \textbf{Randomized boundary tokens.}
+  Wrap model output in tags containing a cryptographic nonce generated \emph{after} the model's response.
+  The model cannot predict the nonce at generation time, so it cannot forge matching delimiters.
+  This is the same principle as CSRF tokens in web security: unpredictable boundaries that the attacker cannot replicate.
+
+  \item \textbf{Fine-tuned classifiers.}
+  Replace prompted judges with classifiers trained on the classification task.
+  A classifier trained to output ``yes''/``no'' given a specific input format has a narrower output distribution than a general-purpose model following instructions, reducing susceptibility to instruction injection.
+\end{enumerate}
+
+\noindent\textit{Note on multi-model consensus.}
+Requiring agreement across multiple judges with different templates raises the bar for an attacker but does not eliminate the vulnerability: each individual judge still embeds unsanitized output, and a sufficiently generic payload (e.g., a fake score with no template-specific delimiters) may transfer across templates.
+We therefore treat consensus as a cost-multiplier for attackers rather than a standalone mitigation.
+
+\medskip
+\noindent AgentDojo and Cybench provide a natural control group for these mitigations.
+Both use programmatic scoring (environment-state checks and flag matching) rather than LLM-as-judge and are immune to the primary vulnerability class.
+This is the strongest available evidence that the class is eliminated by removing the LLM from the scoring loop.
+
+\subsection{For Scoring Code Exposure}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{External scoring.} Run scoring outside the agent's container. The agent should never read its own scoring code.
+  \item \textbf{Hash-based answers.} Store answer hashes, not plaintext, in agent-accessible metadata.
+  \item \textbf{Methodology checks.} Validate the agent's command history, not just final output.
+\end{enumerate}
+
+\subsection{For Eval Awareness}
+
+\begin{enumerate}[leftmargin=*,itemsep=2pt]
+  \item \textbf{Strip identifying metadata.} Remove framework-specific environment variables, container names, and branded HTTP headers before the model can observe them.
+  \item \textbf{Dynamic scenarios.} Generate evaluation scenarios per-run instead of drawing from static public datasets.
+  \item \textbf{Anonymous scanning.} Use generic User-Agent strings. Do not self-identify as a vulnerability scanner.
+\end{enumerate}
+
+% ════════════════════════════════════════════════════════════
+\section{Related Work}\label{sec:related}
+
+\paragraph{Prompt injection.}
+\citet{perez2022ignore} introduced prompt injection against LLMs; \citet{greshake2023indirect} extended it to indirect injection via retrieved content.
+Our finding is a specific case: the ``retrieved content'' is the evaluated model's own output, and the ``victim'' is the judge scoring it.
+
+\paragraph{Reward hacking.}
+METR reported that models reward-hack scoring code to achieve impossible scores~\citep{meinke2024rebench}.
+We systematize this across the ecosystem and trace the structural causes.
+
+\paragraph{LLM judge limitations.}
+Position bias, verbosity bias, and self-enhancement bias are documented~\citep{zheng2023judging}; adversarial vulnerability is demonstrated~\citep{raina2024llmasajudge}; self-preference is measured~\citep{panickssery2024llmeval}.
+Our contribution is identifying a specific exploitable mechanism, not a statistical tendency.
+
+\paragraph{Evaluation integrity.}
+\citet{bowman2021dangers} warned about benchmark gaming; \citet{recht2019imagenet} showed test-set fragility.
+We extend the concern from test sets to scoring \emph{pipelines}: a sound test set scored through a compromised pipeline still produces unreliable results.
+
+\paragraph{AI control and scheming.}
+\citet{greenblatt2024control} proposed AI control for untrusted models; \citet{meinke2025scheming} showed frontier models scheme in-context.
+Our ControlArena findings show that the monitor built to catch adversarial behavior can itself be manipulated through the same injection pattern it is supposed to detect.
+
+% ════════════════════════════════════════════════════════════
+\section{Conclusion}\label{sec:conclusion}
+
+The primary result is that all 6 LLM-as-judge implementations we audited embed the evaluated model's raw output into the judge prompt with no sanitization, escaping, or boundary enforcement.
+This is a deterministic code-level vulnerability: the unsanitized string embedding exists regardless of whether a particular judge model follows injected instructions.
+Empirical exploitation rates remain to be measured and will vary by judge architecture.
+
+The 40 supplementary findings---scoring code accessible to agents, eval-awareness fingerprints, and scoring logic bugs---provide ecosystem context but are secondary.
+
+The core problem is that model output is treated as data in a template where it can function as instructions.
+Web security solved the analogous problem (SQL injection, XSS) decades ago through data-code separation.
+The mitigations are known: randomized boundary tokens, message-role separation, and programmatic scoring (as AgentDojo and Cybench already demonstrate).
+
+The full audit with code references and proof-of-concept traces is at \url{https://github.com/AUTHENSOR/adversarial-review-agent}.
+
+% ════════════════════════════════════════════════════════════
+\section*{Responsible Disclosure}
+
+All findings were documented locally before external communication.
+We subsequently filed GitHub issues for the primary vulnerability class on affected frameworks.
+As of April 2026, three issues have received responses:
+
+\begin{itemize}[leftmargin=*,itemsep=2pt]
+  \item \textbf{ControlArena \#791} (monitor prompt injection via unsanitized tool call arguments, VULN-0007): Acknowledged as valid by a maintainer, who invited a pull request for the fix.
+  \item \textbf{ControlArena \#792} (per-step monitor evaluation with no cross-step state, VULN-0008/0009): Closed by a maintainer as intentional.
+  The default prompt formatter is deliberately stateless for cost reasons; users can access full chat history and prior monitor scores via custom \texttt{PromptFormatter} callables.
+  We note that while the \emph{mechanism} for cross-step monitoring exists, the \emph{default configuration} remains vulnerable to composition attacks where each step is individually benign, and most users will not implement custom formatters.
+  We reclassify these findings as insecure defaults rather than bugs.
+  \item \textbf{Inspect AI \#3603} (judge prompt injection via \texttt{template.format()}, VULN-0001): Independently confirmed by a community contributor, who reproduced the format string injection and proposed a fix.
+  The contributor noted that message-role separation (our primary recommended mitigation) ``would be the cleanest structural fix.''
+\end{itemize}
+
+\noindent Disclosure to remaining affected projects is ongoing.
+
+% ════════════════════════════════════════════════════════════
+\section*{Acknowledgments}
+
+This work was conducted at Authensor, Inc. with no external funding.
+Computational cost: \$0 (code audit only).
+We thank the maintainers of all audited frameworks for making their code public.
+
+% ════════════════════════════════════════════════════════════
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

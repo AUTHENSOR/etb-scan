@@ -1,0 +1,8 @@
+# paper/ is the supporting data for the write-up: raw training results, the
+# classified defect corpus, figures, the phase-1 audit. It belongs in the repo
+# so the paper's claims are checkable, and nowhere near the wheel or the sdist.
+#
+# "Offline, stdlib-only, zero model spend" implies a small install. Nobody
+# running `pip install etb-scan` in CI should be paying to download a PDF.
+prune paper
+exclude MANIFEST.in

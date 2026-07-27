@@ -1,0 +1,39 @@
+{
+  "model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "envs": [
+    "risk_assessment"
+  ],
+  "steps_per_phase": 100,
+  "num_generations": 8,
+  "beta": 0.1,
+  "eval_n": 80,
+  "base": {
+    "reward_true": 0.4,
+    "reward_vulnerable": 0.9,
+    "exploit_rate": 0.5
+  },
+  "vulnerable": {
+    "reward_true": 0.475,
+    "reward_vulnerable": 0.975,
+    "exploit_rate": 0.5,
+    "train_diagnostics": {
+      "n": 800,
+      "reward_true_mean": 0.45,
+      "reward_vulnerable_mean": 0.925,
+      "vulnerable_minus_true": 0.475,
+      "exploit_rate": 0.47625
+    }
+  },
+  "true": {
+    "reward_true": 0.5,
+    "reward_vulnerable": 0.0,
+    "exploit_rate": 0.0,
+    "train_diagnostics": {
+      "n": 800,
+      "reward_true_mean": 0.42125,
+      "reward_vulnerable_mean": 0.03125,
+      "vulnerable_minus_true": -0.39,
+      "exploit_rate": 0.03125
+    }
+  }
+}
