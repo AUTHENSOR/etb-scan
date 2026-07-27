@@ -1,0 +1,62 @@
+name: Dispute a finding
+description: A row in the evidence table, a class in the taxonomy, or a published number is wrong.
+title: "[dispute] "
+labels: ["dispute", "evidence"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This is the most valuable issue you can open.** The evidence base
+        makes claims about 36 named organizations. If one of them is wrong we
+        want it corrected in public, quickly, with credit to whoever caught it.
+
+        This has happened before and the corrections stuck: one report was
+        called fabricated when it was real, and another was credited to us when
+        it was not ours. Both were wrong. Both were fixed.
+
+        You do not need to be polite about it.
+
+  - type: dropdown
+    id: what
+    attributes:
+      label: What is wrong?
+      options:
+        - A row in EVIDENCE-TABLE.md is misclassified
+        - A row is already fixed upstream but shown as open
+        - A row is not a defect at all
+        - A row is attributed to the wrong person or project
+        - A taxonomy class is not a distinct mechanism
+        - A published figure does not reproduce
+        - Something else
+    validations:
+      required: true
+
+  - type: input
+    id: row
+    attributes:
+      label: Which row or claim?
+      description: The upstream URL, or the ETB class, or the figure.
+      placeholder: "https://github.com/org/repo/pull/1234, currently listed as ETB-01 OPEN"
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why is it wrong?
+      description: >
+        Link whatever settles it: the merge commit, the maintainer comment, the
+        code that shows the parse is bound correctly. Every row here resolves to
+        a live URL, so this is usually one click.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: maintainer
+    attributes:
+      label: Optional
+      options:
+        - label: I maintain the project in question
+          required: false
+        - label: I would like the correction to credit me by name
+          required: false

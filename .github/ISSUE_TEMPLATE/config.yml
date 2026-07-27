@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: The defect class itself (ETB-01 .. ETB-10)
+    url: https://www.authensor.com/etb
+    about: What the ten mechanisms are, where they were found, and the fix pattern for each.
+  - name: Report a security vulnerability
+    url: https://github.com/AUTHENSOR/etb-scan/security/advisories/new
+    about: Privately, via GitHub Security Advisories. Not a public issue.
+  - name: Ask a question
+    url: https://github.com/AUTHENSOR/etb-scan/discussions
+    about: "\"Is my judge affected?\" and \"how do I read this ASR?\" belong here."

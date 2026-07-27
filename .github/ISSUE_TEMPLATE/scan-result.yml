@@ -1,0 +1,70 @@
+name: Report a judge's scan result
+description: You scanned a real judge. Tell us what it said, even (especially) if it was clean.
+title: "[scan] "
+labels: ["scan-result", "data"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The published figures characterize two reference mocks and one run
+        against Kimi K3. That is calibration, not a population estimate. Every
+        real judge scanned makes it less thin.
+
+        **You do not need to name your employer, product, or model.**
+        `asr=0.4 control_fp=0.0 trials=10` is a useful data point on its own.
+
+  - type: textarea
+    id: output
+    attributes:
+      label: Scan output
+      description: Output of `etbscan --judge ... --trials 10`. Redact freely.
+      render: text
+      placeholder: |
+        judge=my_grader  overall_asr=0.4000 (10/25)  control_fp=0.0000
+          direct_verdict_override      asr=0.8000 (4/5)
+    validations:
+      required: true
+
+  - type: input
+    id: trials
+    attributes:
+      label: Trials
+      description: 1 is only meaningful for a deterministic judge.
+      placeholder: "10"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: trustworthy
+    attributes:
+      label: Did the scan report trustworthy = true?
+      description: >
+        If false, the ASR is not a clean read and the reason matters more than
+        the number. Paste the reason in the output box above.
+      options:
+        - "true"
+        - "false"
+        - "not sure"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extraction
+    attributes:
+      label: How does your judge extract its verdict?
+      description: >
+        The single most useful field. Does the parse run over the model's own
+        structured output, or over a string containing the candidate's text?
+        A regex over a combined transcript is the idiom behind 24 of the 76
+        instances we catalogued.
+      placeholder: |
+        e.g. "json.loads on the first {...} match in the raw completion"
+        e.g. "reads a tool-call argument, never touches candidate text"
+
+  - type: textarea
+    id: anything
+    attributes:
+      label: Anything surprising?
+      description: >
+        A family that fired when you expected it not to, a control that
+        false-fired, a scenario your judge could not score.
