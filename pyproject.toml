@@ -59,6 +59,7 @@ etbscan = "etbscan.inspect_registry"
 pytest = ["pytest>=7"]
 inspect = ["inspect-ai>=0.3.100"]  # entry-point group "inspect_ai" verified on 0.3.239
 deepeval = ["deepeval>=3"]        # adapter verified on 4.1.4
+weave = ["weave>=0.51"]           # adapter verified on 0.53.3
 
 [tool.setuptools.packages.find]
 include = ["etbscan*"]

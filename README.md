@@ -108,6 +108,26 @@ find, and worse than missing an attack.
 So: a positive is strong evidence. **A negative is not evidence of absence.**
 Treat the Inspect task's score as a lower bound.
 
+## Scan another framework's judge
+
+Adapters live in [`etbscan/integrations/`](etbscan/integrations/). Each imports
+its framework lazily, so `etb-scan` itself stays stdlib-only with zero runtime
+dependencies.
+
+| Framework | Install | Entry point |
+|---|---|---|
+| **Inspect AI** | `pip install "etb-scan[inspect]"` | auto-registers; `inspect eval verdict_injection` |
+| **DeepEval** | `pip install "etb-scan[deepeval]"` | `etbscan.integrations.deepeval.scan_metric(metric)` |
+| **Weave** | `pip install "etb-scan[weave]"` | `etbscan.integrations.weave.scan_scorer(scorer)` |
+
+All three are exercised against the real framework in CI, on push and weekly,
+because they break from upstream releases rather than from our commits.
+
+In every adapter, a framework that raises, reports an error, or returns
+something unreadable is **unscorable**, never a failing verdict. Coercing an
+uninterpretable judgement into "did not pass" is the fail-open this tool exists
+to find.
+
 ## Scan a DeepEval metric
 
 A DeepEval metric is an LLM judge: it reads text the evaluated system wrote and

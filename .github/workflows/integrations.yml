@@ -54,6 +54,18 @@ jobs:
       - run: pip install -e ".[deepeval,pytest]"
       - run: python -m pytest tests/test_deepeval_adapter.py -q
 
+  weave:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -e ".[weave,pytest]"
+      - run: python -m pytest tests/test_weave_adapter.py -q
+
   core-stays-dependency-free:
     # The whole pitch is "offline, stdlib-only, zero model spend". If an
     # integration ever leaks a hard dependency into the package, this fails.
