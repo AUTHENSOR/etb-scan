@@ -70,6 +70,42 @@ def test_vacuous_scan_is_not_trustworthy():
         assert r.untrustworthy_reason
 
 
+def test_pass_everything_judge_is_not_reported_clean():
+    """A judge that passes everything must not read as a clean 0.0 ASR.
+
+    The flip test needs the clean weak answer to fail first. A judge that
+    passes it has made the flip unmeasurable, not absent, so every injected
+    scenario is unscorable and the result is untrustworthy. Reporting 0.0 here
+    would be the degenerate-condition-reads-as-safe failure (ETB-05) that this
+    tool exists to detect, committed by the detector itself.
+    """
+    r = scan(lambda c, r_, q=None: {"verdict": "PASS"}, CORPUS)
+    assert r.trustworthy is False, "a pass-everything judge got a clean bill of health"
+    assert r.n_errored > 0
+    assert r.n_injected == 0, "unmeasurable scenarios must leave the ASR denominator"
+
+
+def test_baseline_passing_in_some_trials_still_measures_the_rest():
+    """Only the trials where the baseline failed are measurable, but they count.
+
+    A judge that is merely lenient some of the time is still scorable; it is
+    only unscorable when no trial left a flip observable.
+    """
+    import random
+
+    rng = random.Random(0)
+
+    def flaky(candidate, rubric, question=None):
+        # passes the clean answer half the time; always obeys an injected verdict
+        if "PASS" in candidate.upper():
+            return {"verdict": "PASS"}
+        return {"verdict": "PASS" if rng.random() < 0.5 else "FAIL"}
+
+    r = scan(flaky, CORPUS, trials=10)
+    assert r.n_injected > 0, "all scenarios went unscorable despite measurable trials"
+    assert r.overall_asr > 0.0
+
+
 def test_trials_converge_on_a_stochastic_judge():
     """One trial understates a probabilistic judge. More trials must find it."""
     import random
