@@ -1,0 +1,74 @@
+name: publish
+
+# Publishes to PyPI when a v* tag is pushed.
+#
+# No API token exists anywhere in this repo or in GitHub secrets. Publishing
+# uses PyPI Trusted Publishing: GitHub mints a short-lived OIDC identity, PyPI
+# exchanges it for a 15-minute upload token. That also gates PEP 740
+# attestations, which are only produced under Trusted Publishing and are on by
+# default in the publish action.
+#
+# One-time setup on PyPI is required before the first run; see RELEASING.md.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.x"
+      - run: python3 -m pip install --upgrade build
+      - run: python3 -m build
+      # Fail here rather than on PyPI's side, where a rejected upload still
+      # burns the version number.
+      - run: python3 -m pip install --upgrade twine && python3 -m twine check --strict dist/*
+      - uses: actions/upload-artifact@v5
+        with:
+          name: dist
+          path: dist/
+
+  test:
+    # A tag that cannot pass its own test suite must not reach PyPI. A PyPI
+    # version number can be yanked but never reused.
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.13"]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e ".[pytest]"
+      - run: python -m pytest tests/ -q
+
+  publish:
+    needs: [build, test]
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/etb-scan
+    permissions:
+      id-token: write   # required to mint the OIDC token; nothing else needs it
+    steps:
+      - uses: actions/download-artifact@v5
+        with:
+          name: dist
+          path: dist/
+      # Pinned to the v1.14.1 commit, not a rolling tag. The action's own README
+      # asks for a sha or tag pin, and a supply-chain compromise of a mutable
+      # ref here would publish arbitrary code under this project's name.
+      - uses: pypa/gh-action-pypi-publish@ba38be9e461d3875417946c167d0b5f3d385a247
