@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "etb-scan"
-version = "0.1.0"
+version = "0.1.1"
 description = "Measure a judge's Evaluator Trust Boundary susceptibility (ETB-01 verdict injection). Offline, stdlib-only, zero model spend."
 readme = "README.md"
 requires-python = ">=3.9"
