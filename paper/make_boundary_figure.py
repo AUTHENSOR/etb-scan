@@ -3,6 +3,12 @@
 The name "Evaluator Trust Boundary" is a spatial claim, so the paper shows the
 space once: two sets, and the violation as their intersection.
 
+The left set is deliberately "determines the verdict" and not "read by the
+scorer". A judge has to read the answer it is grading, and most of what the
+evaluated system writes is exactly what the evaluator is supposed to look at.
+Drawing the sets as read-versus-written would put that necessary case inside
+the violation. The invariant is about what the score is a function of.
+
 Set plainly, to sit inside a serif single-column paper without announcing
 itself: serif type below body size, hairline outlines, one grey for the lens,
 and only the three labels it needs. Everything else belongs in the caption.
@@ -48,11 +54,14 @@ def main() -> None:
         ax.add_patch(Circle(centre, r, facecolor="none", edgecolor=INK,
                             linewidth=1.0, zorder=3))
 
-    ax.text(-1.06, 0.0, "read by\nthe scorer", ha="center", va="center",
+    # NOT "read by the scorer". The scorer must read the candidate's answer;
+    # that is the measurement, not the defect. The invariant is about what the
+    # verdict is a FUNCTION OF, so that is what the left set has to be.
+    ax.text(-1.06, 0.0, "determines\nthe verdict", ha="center", va="center",
             fontsize=7.5, color=INK, linespacing=1.35, zorder=4)
-    # Three lines, not two: "evaluated system" on one line reaches the circle's
-    # edge and the descender touches the stroke.
-    ax.text(1.06, 0.0, "written by\nthe evaluated\nsystem", ha="center",
+    # Three lines, not two: on two, this reaches the circle's edge and the
+    # descender touches the stroke.
+    ax.text(1.06, 0.0, "controlled by\nthe evaluated\nsystem", ha="center",
             va="center", fontsize=7.5, color=INK, linespacing=1.35, zorder=4)
     ax.text(0.0, 0.0, "ETB", ha="center", va="center", fontsize=9,
             color=INK, zorder=4)

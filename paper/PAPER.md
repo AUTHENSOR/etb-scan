@@ -20,6 +20,8 @@ In AI evaluation this property is violated by default. A judge model is handed t
 
 We call this an **Evaluator Trust Boundary failure**: the evaluator has moved its trust boundary inside the thing it is measuring.
 
+This is a wider problem than judge injection, and a different one. The judge-attack literature studies a language model being talked into the wrong answer, and its remedy is a more robust judge. What follows is a property of scoring code, so it reaches surfaces where no judge model is present at all: a metric that drops the samples that errored, a test runner that believes a self-reported `PASSED`, a monitor whose per-step innocence is read as trajectory innocence. Its effects differ accordingly. It needs no adversary, it fires on ordinary prose as readily as on a crafted string, and it survives a judge hardened against every published attack.
+
 This is not a hypothetical cost. METR, reporting on its own frontier evaluations, states that "for tasks that are over 8 hours long in Time Horizon 1.1, we found that at least 16% of successful runs were illegitimate upon review," that "we have had to remove several tasks from our dataset because excessive cheating made them uninformative," and, most tellingly, that "cheating is a significant enough issue for our measurement integrity that manually checking for cheating is often the majority of the work involved in a run of our evaluation suite" \citep{metr2026frontierrisk}.
 
 That last sentence is the state of the art at one of the most careful evaluation organizations in the field: the integrity of the measurement is preserved by a human reading transcripts, because the scorer cannot be trusted to do it. This paper is about why the scorer cannot, and what would have to change in the code for it to be able to.
@@ -48,9 +50,11 @@ What is added here: ten mechanisms rather than two, 36 organizations rather than
 
 > A score must be a function only of state the evaluated system cannot reach.
 
-Two sets are in play whenever anything is scored: the state the scorer reads, and the state the evaluated system can write. An ETB failure is a non-empty intersection.
+Note what this does *not* say. It does not say the scorer must avoid reading what the evaluated system produced: reading the answer is the measurement. Almost everything the evaluated system writes is exactly what the evaluator is supposed to look at. The constraint is narrower and stricter. The answer may be the *object* of the judgement; it may not be an *input* to it.
 
-![The left set holds the rubric, frozen ground truth, and the judge's own structured output. The right holds the answer, its reasoning, tool arguments, stdout, and the transcript. The invariant says the overlap must be empty; each class in Table 1 is one way it stopped being.](figures/trust_boundary.pdf)
+An ETB failure is the case where those two collapse into each other, and text submitted to be judged ends up helping decide the judgement.
+
+![What the verdict is a function of, against what the evaluated system controls. The overlap is the failure. Reading the candidate's answer is not in it: a judge that reads an answer and scores it against a rubric it holds itself keeps the sets disjoint. Each class in Table 1 is one way they stopped being.](figures/trust_boundary.pdf)
 
 ### 2.2 The mechanisms
 
@@ -237,9 +241,7 @@ The spread is wide, and it does not track organization size or resources. We not
 
 ### 7.1 Attacks on judges, versus a defect in evaluators
 
-A substantial literature shows that LLM judges can be manipulated. JudgeDeceiver \citep{shi2024judgeinjection} formulates injection as an optimization problem and solves it with gradient descent. Maloyan et al. \citep{maloyan2025judgeinjection} craft GCG adversarial suffixes and report attack success above 30%. BadJudge \citep{tong2025badjudge} poisons 1% of the evaluator's training data to triple an adversary's score. Li et al. \citep{li2025cannotjudge} assess judge robustness broadly.
-
-**Every one of these is an attack paper**, and every one requires an adversary with specific capabilities: gradient access to craft a suffix, or write access to the evaluator's training data. None inspects the source code of an evaluation framework, and none reports how often the underlying weakness occurs in deployed software.
+A substantial literature shows that LLM judges can be manipulated: JudgeDeceiver \citep{shi2024judgeinjection} by gradient-optimized injection, Maloyan et al. \citep{maloyan2025judgeinjection} by GCG suffixes, BadJudge \citep{tong2025badjudge} by poisoning 1% of the evaluator's training data, and Li et al. \citep{li2025cannotjudge} by broad robustness assessment. Every one is an attack paper requiring an adversary with specific capabilities, none inspects the source of an evaluation framework, and none reports how often the underlying weakness occurs in deployed software. On the tooling side, Anthropic's Petri \citep{petri2025} covers an overlapping behaviour list and names LLM-judge grading reliability as an open limitation, which is the gap Section 4 addresses.
 
 | | JudgeDeceiver | Maloyan et al. | BadJudge | This work |
 |---|---|---|---|---|
@@ -249,11 +251,7 @@ A substantial literature shows that LLM judges can be manipulated. JudgeDeceiver
 | Found by | running an attack | running an attack | inspecting the model | **reading the source** |
 | Evidence | benchmark ASR | 2 models, 1 dataset | 3 scenarios | **76 instances, 36 orgs** |
 
-The distinction is not rhetorical. **A perfectly robust judge model does not fix ETB-01.** The defect is in the code that parses the judge's output, not in the judge. Harden a judge against every published injection attack, then place it behind a greedy first-match regex over the candidate's text, and the model still receives its own verdict.
-
-Two of the fixes in Section 3 make this concrete. `inspect_evals#1812` widens the *grader's* grade parse to tolerate grader decoration; `inspect_ai#4283` reports that `GRADE:` extraction mis-scores on ordinary prose. Neither involves an adversary, an attack string, or any weakness in the judge model, and both were merged.
-
-ETB-01 is therefore not "prompt injection into judges." It is "the extraction step reads a string the policy can write," which is a superset: it fires on adversarial injection, on benign prose that happens to contain a verdict token, and on a policy that drifts into the pattern under optimization pressure with no intent at all. The attack literature establishes the surface. This work characterizes the defect and measures it in the field.
+The distinction is not rhetorical, and Section 4.1 demonstrates it on a live model: harden a judge against every published attack, then read its verdict off a string the candidate helped write, and the same model goes from 0.0000 to 1.0000. ETB-01 is therefore not "prompt injection into judges" but "the extraction step reads a string the policy can write", which is a superset. It fires on a crafted injection, on benign prose that happens to contain a verdict token, and on a policy that drifts into the pattern under optimization pressure with no intent at all. Two merged fixes from Section 3 show the adversary-free case: `inspect_evals#1812` widens a grader's parse to tolerate the grader's own decoration, and `inspect_ai#4283` reports `GRADE:` extraction mis-scoring ordinary prose.
 
 ### 7.2 Verifiable-by-construction measurement
 
@@ -279,10 +277,6 @@ The two studies differ in three ways.
 **Measurement versus intervention.** Their contribution is an evaluation paradigm and they run no RL. Section 5 has no counterpart in their work: two policies trained identically except for which reward track the optimizer sees, at three model sizes, with exploitation driven to near zero on the ground-truth track.
 
 They corroborate our result on an axis we did not test: hack rate rises monotonically with task difficulty, and under persistent memory "hacking is emergent and addictive: once started, it tends to recur." That is the behavioural analogue of Section 5.3's finding that the vulnerable track is learnable, accumulating within a context window rather than in the weights. Difficulty and model scale are two axes along which the same hazard grows.
-
-### 7.3 Adjacent literature
-
-The LLM-as-judge robustness literature establishes that judges are manipulable in the abstract, without measuring prevalence in deployed infrastructure. Reward-hacking and specification-gaming work characterizes the behavior as an alignment problem, generally treating the reward function as given rather than asking what an evaluator reads that a policy can write. Anthropic's Petri \citep{petri2025} provides a free tool covering an overlapping behavior list and names LLM-judge grading reliability as an open limitation, which is the gap Section 4 addresses.
 
 ---
 
