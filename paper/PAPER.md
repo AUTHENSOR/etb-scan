@@ -8,7 +8,7 @@
 
 ## Abstract
 
-Evaluation infrastructure for AI systems routinely computes scores from artifacts the evaluated system controls. Prior work establishes that LLM judges can be **attacked**, using gradient-based prompt injection or training-data poisoning. We show that evaluation infrastructure is **already compromised without an attacker**: the defect sits in the scoring code path rather than in the judge model, so it survives a perfectly hardened judge and is reachable by ordinary optimization. We name this class the **Evaluator Trust Boundary (ETB) failure** and decompose it into ten mechanisms, from injected verdicts to dropped denominators to forged execution artifacts. We report **76 instances across 36 organizations**, drawn from 99 defect reports filed across 46 organizations during the audit, and show that the same parsing idiom recurs in independently developed codebases. Concurrent work by Roth et al. (arXiv 2605.20744) independently introduced verifiable-by-construction measurement of reward hacking two months earlier; we credit that priority and distinguish our object of study (the scorer, not the task) and our contribution (a training intervention, not an evaluation paradigm) in Section 7. We give a deterministic detector that separates susceptible from hardened judges with a 1.00 attack-success-rate gap and zero false positives on benign controls. We then show the failure is not only a measurement artifact but a training hazard: on a dual-track environment where an exploitable reward is available alongside a ground-truth reward, base exploitation rates on held-out prompts *rise* with model scale (11.3% to 50.0% to 45.0% across Qwen2.5 0.5B, 1.5B, and 7B), while GRPO on the ground-truth track drives exploitation to 6.3%, 0.0%, and 0.0% respectively. Finally, we observe that 69% of ETB instances remain unfixed 30 or more days after disclosure with a working patch attached, which we argue is evidence that the trust boundary is absent from maintainers' models of their own code rather than evidence of neglect.
+Evaluation infrastructure for AI systems routinely computes scores from artifacts the evaluated system controls. Prior work establishes that LLM judges can be **attacked**, using gradient-based prompt injection or training-data poisoning. We show that evaluation infrastructure is **already compromised without an attacker**: the defect sits in the scoring code path rather than in the judge model, so it survives a perfectly hardened judge and is reachable by ordinary optimization. We name this class the **Evaluator Trust Boundary (ETB) failure** and decompose it into ten mechanisms, from injected verdicts to dropped denominators to forged execution artifacts. We report **76 instances across 36 organizations**, drawn from 99 defect reports filed across 46 organizations during the audit, and show that the same parsing mistake recurs in independently developed codebases. Concurrent work by Roth et al. (arXiv 2605.20744) independently introduced verifiable-by-construction measurement of reward hacking two months earlier; we credit that priority and distinguish our object of study (the scorer, not the task) and our contribution (a training intervention, not an evaluation paradigm) in Section 7. We give a deterministic detector that separates susceptible from hardened judges with a 1.00 attack-success-rate gap and zero false positives on benign controls. We then show the failure is not only a measurement artifact but a training hazard: on a dual-track environment where an exploitable reward is available alongside a ground-truth reward, base exploitation rates on held-out prompts *rise* with model scale (11.3% to 50.0% to 45.0% across Qwen2.5 0.5B, 1.5B, and 7B), while GRPO on the ground-truth track drives exploitation to 6.3%, 0.0%, and 0.0% respectively. Finally, we observe that 69% of ETB instances remain unfixed 30 or more days after disclosure with a working patch attached, which we argue is evidence that the trust boundary is absent from maintainers' models of their own code rather than evidence of neglect.
 
 ---
 
@@ -28,17 +28,17 @@ This paper makes four claims.
 
 **The class is real and unified.** Ten distinct mechanisms (§2) reduce to one invariant violation. They are not ten bugs; they are one architectural mistake with ten surfaces.
 
-**The class is systemic.** We report 76 instances across 36 organizations (§3). Independently developed codebases converge on the identical greedy-first-match extraction idiom, which is evidence of a shared mental model rather than of shared code.
+**The class is systemic.** We report 76 instances across 36 organizations (§3). Independently developed codebases converge on the same wrong default, taking the first match in a string the candidate helped write, which is evidence of a shared blind spot rather than of shared code.
 
 **The class is consequential, and it gets worse with capability.** A deterministic detector shows a 1.00 ASR gap between susceptible and hardened judges (§4). More importantly, on a dual-track training environment, base exploitation rates rise with model scale, and the hazard is trainable in both directions (§5).
 
 **The class is invisible rather than ignored.** Roughly seven in ten instances remain open 30 or more days after disclosure with a patch attached (§6). We treat this as a property of the defect, not a judgment of maintainers.
 
-### 1.1 What is new relative to phase 1
+### 1.1 Relation to our earlier audit
 
-The phase-1 audit examined 10 evaluation frameworks and found that all 6 using LLM-as-judge scoring embedded evaluated-model output into the judge prompt with no sanitization. That result established the mechanism now labeled ETB-01 and ETB-02 in a small sample.
+This paper supersedes an earlier audit of ours, *Judge Prompt Injection Across the AI Safety Ecosystem*, which read the source of 10 evaluation frameworks and found that all 6 of them using LLM-as-judge scoring passed evaluated-model output into the judge prompt unsanitized. That established two of the mechanisms below in a small sample.
 
-This paper (a) generalizes from 2 mechanisms to 10, (b) expands from 10 frameworks to 36 organizations, (c) adds a reproducible detector, and (d) adds the training result, which is the part that changes the class from a measurement concern to a safety concern.
+What is added here: ten mechanisms rather than two, 36 organizations rather than 10 frameworks, a detector anyone can run, and the training result of Section 5, which is what moves the class from a measurement problem to a safety one.
 
 ---
 
@@ -48,24 +48,28 @@ This paper (a) generalizes from 2 mechanisms to 10, (b) expands from 10 framewor
 
 > A score must be a function only of state the evaluated system cannot reach.
 
+Two sets are in play whenever anything is scored: the state the scorer reads, and the state the evaluated system can write. An ETB failure is a non-empty intersection.
+
+![The Evaluator Trust Boundary. The scorer should read only from the left; the evaluated system writes only into the right. Every class in Section 2.2 is one way the two came to overlap.](figures/trust_boundary.pdf)
+
 ### 2.2 The mechanisms
 
-Full definitions and fix patterns in `TAXONOMY.md`. Summarized:
+Each is a different answer to one question: *what does the scorer read that the policy can write?* Full definitions and fix patterns are at <https://www.authensor.com/etb>.
 
-| ID | Failure | The evaluator trusts |
-|---|---|---|
-| ETB-01 | Injected verdict trusted | a score parsed out of candidate-written text |
-| ETB-02 | Unsanitized model output in evaluator prompt | model text as prompt structure |
-| ETB-03 | Fail-open on error | an error as a pass |
-| ETB-04 | Denominator drop | a mean over a silently reduced sample |
-| ETB-05 | Unscorable read as behavior-absent | "could not score" as "safe" |
-| ETB-06 | Missing normalization | a byte comparison over unnormalized text |
-| ETB-07 | Composition blindness | per-step innocence as trajectory innocence |
-| ETB-08 | Metric miscounting | an aggregation that loses per-key structure |
-| ETB-09 | Forged execution artifact | a self-reported execution result |
-| ETB-10 | Evaluation context leakage | a context the policy can detect and condition on |
+| Class | The evaluator trusts |
+|---|---|
+| **ETB-01** Injected verdict | a score parsed out of candidate-written text |
+| **ETB-02** Unsanitized model output | model text as prompt structure |
+| **ETB-03** Fail-open on error | an error as a pass |
+| **ETB-04** Denominator drop | a mean over a silently reduced sample |
+| **ETB-05** Unscorable read as absent | "could not score" as "safe" |
+| **ETB-06** Missing normalization | a byte comparison over unnormalized text |
+| **ETB-07** Composition blindness | per-step innocence as trajectory innocence |
+| **ETB-08** Metric miscounting | an aggregation that loses per-key structure |
+| **ETB-09** Forged execution artifact | a self-reported execution result |
+| **ETB-10** Evaluation context leakage | a context the policy can detect |
 
-**On class thinness.** Seven classes are supported by four or more instances. Two are not: ETB-07 (composition blindness) and ETB-10 (evaluation context leakage) each rest on a single observation. We include them because both are named as distinct failure modes in the phase-1 audit and both have a clear fix pattern, but a single instance is a hypothesis about a class, not a measurement of one. Readers should weight them accordingly.
+**On class thinness.** Seven classes are supported by four or more instances. Two are not: ETB-07 (composition blindness) and ETB-10 (evaluation context leakage) each rest on a single observation. We include them because both are distinct failure modes with a clear fix pattern, but a single instance is a hypothesis about a class, not a measurement of one. Readers should weight them accordingly.
 
 ### 2.3 Why these are one class and not ten
 
@@ -98,11 +102,11 @@ The sample includes national safety institutes (UK AI Security Institute), front
 
 We are not aware of an evaluation stack in our sample that is free of the class.
 
-### 3.3 Convergent idiom
+### 3.3 The same mistake, independently
 
-The single most-repeated instance is a greedy first-match extraction over candidate-controlled text: `re.search` for the first `GRADE:` marker, or a JSON parse that returns the first well-formed object in the string. This appears in codebases with no shared lineage.
+One implementation choice recurs more than any other: **take the first match in the string**. Concretely, a regular expression that stops at the first `GRADE:` marker it encounters, or a parser that returns the first well-formed JSON object it finds. The string being searched contains the candidate's own answer, so the candidate writes first and the candidate wins.
 
-Convergence on an identical mistake across independent implementations is the strongest available evidence that the defect is structural. It is what a missing concept looks like in a codebase: everyone reaches for the same wrong default because nobody is holding the trust boundary in mind.
+This is not a defect in any one library, and it is not inherited: it appears in codebases with no shared lineage. Independent implementations converging on the same wrong default is the strongest evidence available that the defect is structural rather than incidental. It is what a missing concept looks like in source code. Nobody is holding the trust boundary in mind, so everybody reaches for the most obvious parse.
 
 ---
 
@@ -129,7 +133,7 @@ We provide a deterministic scanner (`scanner/`) that measures a judge's suscepti
 
 Per-family ASR is 1.00 on the susceptible judge and 0.00 on the hardened judge for all five families. The discrimination delta is 1.00 with no false fires on controls.
 
-The two reference judges bracket the observed spectrum: the susceptible judge reads candidate text as instructions, the failure mode found in six of ten frameworks in phase 1; the hardened judge scores only against the rubric, the message-role separation fix that UK AISI maintainers endorsed and merged. Pointing `scan` at any real judge callable with the same signature yields that judge's ASR.
+The two reference judges bracket the observed spectrum: the susceptible judge reads candidate text as instructions, the failure mode found in six of the ten frameworks in our earlier audit; the hardened judge scores only against the rubric, the message-role separation fix that UK AISI maintainers endorsed and merged. Pointing `scan` at any real judge callable with the same signature yields that judge's ASR.
 
 **Limitation.** The reference judges are deterministic stand-ins, so the 1.00 and 0.00 figures characterize the instrument, not the population. The scanner measures a given judge; it does not estimate an ecosystem-wide ASR.
 
@@ -186,7 +190,7 @@ Ground-truth reward over the same runs: 0.300 → 0.725 (0.5B), 0.400 → 0.500 
 
 ### 5.3 Two findings
 
-**Base exploitation rises with capability.** An untrained 0.5B model takes the available exploit on 11.3% of held-out prompts. At 1.5B and 7B the base rate is 50.0% and 45.0%. The more capable the policy, the more readily it finds and takes the shortcut the compromised evaluator pays for. This is the opposite of a problem that resolves as models improve.
+**Base exploitation rises with capability.** An untrained 0.5B model takes the available exploit on 11.3% of held-out prompts. At 1.5B and 7B the base rate is 50.0% and 45.0%. The more capable the policy, the more readily it finds and takes the shortcut the compromised evaluator pays for. What scales with capability is the ability to find the weakness and exploit it. Nothing here suggests a smarter model will decline to.
 
 **The hazard is trainable in both directions.** Optimizing the vulnerable track raises exploitation from 11.3% to 50.0% at 0.5B, confirming the temptation is learnable rather than incidental. Optimizing the ground-truth track drives exploitation to near zero at every rung while holding or lifting the honest reward.
 
@@ -198,7 +202,7 @@ Scaling laws for reward-model overoptimization \citep{gao2023scaling, rafailov20
 
 ODIN \citep{chen2024odin}, InfoRM, and reward-model ensembles \citep{coste2024ensembles} reduce reward hacking by building a **better proxy**: disentangling length, regularizing with information-theoretic objectives, or averaging over ensembles. The intervention here is not a better proxy. `reward_true` is a pure function of frozen ground truth the policy cannot influence, so no exploit can raise it by construction rather than by degree. That is available only where such ground truth exists, which is a real limitation and the reason these approaches are complementary rather than competing.
 
-### 5.6 Honest caveats
+### 5.6 Limitations
 
 The 7B run required 200 steps at β=0.05; at the gentler 0.5B configuration it barely moved. That is a training-budget fact, not a property of the environment, but it means the three rungs are not a controlled scaling study. The 1.5B and 7B base rates are close enough (50.0% vs 45.0%) that the trend is better described as "high and non-decreasing above 1.5B" than as monotonic. Results are on a single environment; generalization across the other nine classes is untested. Holdout n=80 gives roughly ±11 points at 95% confidence on a 50% rate, so the base-rate ordering between 1.5B and 7B is not resolved by this data.
 
@@ -208,13 +212,13 @@ The 7B run required 200 steps at β=0.05; at the gentler 0.5B configuration it b
 
 Of the 76 ETB instances, 12 have landed. Restricting to those reported 30 or more days ago, **11 of 35 have landed, a 31% fix rate**. Counting all 99 defect reports including the adjacent categories, 13 of 39 mature reports landed, a 33% rate. All figures are from the audit snapshot of 2026-07-24.
 
-We report this not as a criticism of maintainers but as evidence about the defect. Every report was public, specific, and accompanied by a proposed patch. When a free, working fix for a named defect sits unmerged for a month, the most parsimonious explanation is not indifference. It is that the trust boundary is not part of the mental model the maintainer uses when reading the code, so the report does not resolve into an obvious action.
+Every report was public, specific, and accompanied by a proposed patch. Maintainers cannot readily fix a class of defect they are not familiar with: without the trust boundary in mind, the report does not resolve into an obvious action, and a free working patch for a named defect sits unmerged for a month. The rate is evidence about the concept's absence, not about anyone's diligence.
 
 Two observations support the invisibility reading over the indifference reading:
 
 - Where the concept *was* already present, response was immediate. On `control-arena`, a maintainer reimplemented and merged the sanitization fix ten minutes after our PR was closed. On `inspect_ai`, a reported extraction defect produced a merged fix within nine days by a third contributor.
 - The organization that has internalized the concept most thoroughly pays for it in labor rather than in code. METR reports that "manually checking for cheating is often the majority of the work involved in a run of our evaluation suite" \citep{metr2026frontierrisk}. That is what the boundary looks like once it *is* in the mental model and the tooling has not caught up: not a missing fix, but a standing human cost absorbed indefinitely. The 69% unfixed rate and METR's manual review are the same finding seen from two ends.
-- On one class, ETB-07, a maintainer explicitly stated the behavior was intentional and cost-motivated. We treat this as the study's control case. It is the single instance in our sample where the trust boundary was demonstrably already present in a maintainer's model of their own code, and the result was an explicit, priced, defensible tradeoff rather than an oversight. The contrast is the argument: where the concept exists, engineers reason about it; where it does not, the same engineers write the same wrong default. We therefore classify ETB-07 not as a defect but as an undocumented tradeoff, and note that a repository search returns no matches for `cross-step` or `composition`, so consumers of the monitor's output have no way to learn that composition attacks pass by design. The gap is in disclosure, not in the code.
+- On one class, ETB-07, a maintainer explicitly stated the behavior was intentional and cost-motivated. We treat this as the study's control case. It is the single instance in our sample where the trust boundary was demonstrably already present in a maintainer's model of their own code, and the result was an explicit, priced, defensible tradeoff rather than an oversight. The contrast is the argument: where the concept exists, engineers reason about it; where it does not, the same engineers write the same wrong default. We therefore classify ETB-07 as an undocumented tradeoff rather than a defect, and note that a repository search returns no matches for `cross-step` or `composition`. In the best case the gap is disclosure: the tradeoff is deliberate and defensible, and consumers of the monitor's output simply have no way to learn that composition attacks pass by design. In the worst case a reader takes those numbers as a measurement of whether attacks occurred, when an attacker who distributes an action across steps is scored clean by construction, and the results cannot support the weight placed on them.
 
 Per-organization response on defects reported 30 or more days ago:
 
@@ -268,29 +272,31 @@ What differs is the object of study and what is done with it.
 | **Scaling axis** | Task difficulty | Model scale |
 | **Training** | None | GRPO before/after at three model sizes |
 
-Three distinctions carry the contribution.
+The two studies differ in three ways.
 
-**They plant hacks; we find them.** Their wrapper deliberately places a hidden solution file or a deliberately buggy source file into a mock filesystem, which is the right design for a controlled benchmark. The 76 instances in Section 3 were not planted. They are defects in production code that shipped, which makes this a field survey rather than a testbed. The two evidence types answer different questions: theirs establishes that models exploit reachable flaws under controlled conditions, ours establishes that such flaws are pervasive in the infrastructure currently producing published safety numbers.
+**Planted flaws versus observed ones.** Their wrapper deliberately places a hidden solution file or a buggy source file into a mock filesystem, which is the right design for a controlled benchmark and lets them state exactly what an exploit is. The 76 instances in Section 3 were not planted; they are defects in shipped production code. The two designs answer different questions. Theirs establishes that models exploit reachable flaws under controlled conditions. Ours establishes how often such flaws are present in the infrastructure currently producing published safety numbers.
 
-**Their hacks compromise the task; ETB failures compromise the measurement.** A hidden solution file is a flaw in task design: the agent retrieves instead of computing, and the scorer still works correctly. An ETB failure is a flaw in the scorer itself: the verdict is parsed out of text the model wrote, the denominator quietly drops the samples that errored, the runner believes a self-reported `PASSED`. These overlap at the edges (their "logical bug" class is adjacent to our ETB-09) but the objects are distinct, and conflating them would lose the distinction that makes ETB a class.
+**The task versus the scorer.** A hidden solution file is a flaw in task design: the agent retrieves instead of computing, and the scorer still works correctly. An ETB failure is a flaw in the scorer: the verdict is parsed out of text the model wrote, the denominator drops the samples that errored, the runner believes a self-reported `PASSED`. The two overlap at the edges, since their "logical bug" class is adjacent to ETB-09, but the objects are distinct.
 
-**They measure; we also train.** Their contribution is explicitly an evaluation paradigm, and they run no RL. Section 5 is the part with no counterpart in their work: two policies trained identically except for which reward track the optimizer sees, across three model sizes, with exploitation driven to near zero on the ground-truth track. That is the step from *measuring* a hazard to *removing* it.
+**Measurement versus intervention.** Their contribution is an evaluation paradigm and they run no RL. Section 5 has no counterpart in their work: two policies trained identically except for which reward track the optimizer sees, at three model sizes, with exploitation driven to near zero on the ground-truth track.
 
 Their findings also corroborate ours on an axis we did not test. They report that hack rate rises **monotonically with task difficulty**, that law-abiding instructions reduce but never eliminate hacking, and, most relevantly, that under persistent memory across games "hacking is emergent and addictive: once started, it tends to recur." That last observation is a behavioral analogue of our Section 5.3 finding that the vulnerable track is learnable: they observe the effect accumulate within a context window, we observe it accumulate in the weights. Read together, difficulty and model scale are two axes along which the same hazard grows.
 
-### 7.3 Other
+### 7.3 Adjacent literature
 
 The LLM-as-judge robustness literature establishes that judges are manipulable in the abstract, without measuring prevalence in deployed infrastructure. Reward-hacking and specification-gaming work characterizes the behavior as an alignment problem, generally treating the reward function as given rather than asking what an evaluator reads that a policy can write. Anthropic's Petri \citep{petri2025} provides a free tool covering an overlapping behavior list and names LLM-judge grading reliability as an open limitation, which is the gap Section 4 addresses.
 
 ---
 
-## 8. What follows
+## 8. Continued work
 
-**For evaluator authors.** The operational test is one question asked of every scoring path: *what does this read that the policy can write?* Ten known answers are in `TAXONOMY.md`, each with a fix pattern.
+The operational test this paper proposes is a single question asked of every scoring path: *what does this read that the policy can write?* Answering it is a source-review task, which does not scale, so we implemented the one class that can be measured from outside the code.
 
-**For eval consumers.** Published safety numbers are lower bounds on the failure they measure, by an amount nobody currently reports. An evaluation harness with an ETB failure produces scores whose error is not random; it is adversarially directed toward passing.
+`etb-scan` is a free detector for ETB-01. It presents a judge with 25 injected scenarios across five attack families and 8 benign controls, and reports the rate at which text written by the evaluated model flips a failing verdict to a passing one. It runs offline against a judge callable, with no model spend, and reports a scenario as unscorable rather than clean whenever the measurement did not succeed, since a vacuous zero reads exactly like a clean bill of health. Section 4.1 is its first application to a frontier model.
 
-**For labs training on verifiable rewards.** §5 is the operative section. An exploitable evaluator inside an RL loop does not merely mismeasure; it teaches. Base exploitation rising with scale means the risk grows with the capability of the models being trained.
+The nine remaining classes are not detectable from outside the scoring code. Dropped denominators, fail-open error paths and forged execution artifacts are visible only to someone reading the source, and closing that gap is the obvious next piece of work: the mechanisms are enumerated and the fix patterns are known, but there is no equivalent of `etb-scan` for any of them.
+
+The error an ETB failure introduces is worth stating plainly, because it is not the error most readers assume. It is not noise. A scorer that reads what the policy writes is biased in one direction, toward passing, and the bias grows with the policy's capability rather than washing out with more samples.
 
 ---
 
@@ -320,4 +326,4 @@ Every defect in this paper was reported upstream publicly, with a proposed patch
 
 ## Open questions
 
-Whether the §5 scaling behavior holds on the other nine classes. Whether convergence on the greedy-extraction idiom reflects copying, shared training data in code assistants, or independent convergence on a natural-seeming default. Whether a re-audit in six months shows movement, which would distinguish invisibility from a slower fix pipeline.
+Whether the §5 scaling behavior holds on the other nine classes. Whether so many codebases arrived at first-match extraction by copying, by shared training data in code assistants, or by independently reaching for the most obvious parse. Whether a re-audit in six months shows movement, which would distinguish invisibility from a slower fix pipeline.
