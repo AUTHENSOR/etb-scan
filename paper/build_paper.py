@@ -36,7 +36,18 @@ SUBTITLE = (
     "A defect class in AI evaluation infrastructure, its prevalence across "
     "36 organizations, and its removal by training"
 )
-AUTHOR = "Authensor, Inc."
+# Personal name, corporate affiliation. The DOI citation is built from this
+# field, so a company-only author line would credit the company and not the
+# person for a paper going out under a permanent identifier.
+# Personal name only. The DOI citation is built from this field, so a
+# company-only line would credit the company rather than the person for a
+# paper carrying a permanent identifier.
+#
+# The affiliation is NOT appended here. Pandoc escapes this string on its
+# way into \author{}, so a LaTeX line break becomes a literal backslash on
+# the title page and leaks into the PDF metadata. It is set by \postauthor
+# in preamble.tex instead.
+AUTHOR = "John Kearney"
 
 
 def yaml_escape(text: str) -> str:
