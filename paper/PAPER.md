@@ -295,7 +295,7 @@ One property of this error is worth stating plainly, because it is not the one m
 
 ## Reproduction
 
-Everything below is public. The repository is <https://github.com/AUTHENSOR/etb-scan> and the class is documented at <https://www.authensor.com/etb>.
+This paper is archived at <https://doi.org/10.5281/zenodo.21633620>. Everything below is public. The repository is <https://github.com/AUTHENSOR/etb-scan> and the class is documented at <https://www.authensor.com/etb>.
 
 | Artifact | Location |
 |---|---|

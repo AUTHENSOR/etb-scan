@@ -189,6 +189,29 @@ attackers; it makes benign grading nondeterministic.
 - This measures ETB-01 only. Nine further classes (dropped denominators, fail-open error paths, forged execution artifacts, and others) are not detectable from outside the scoring code and need code review. See [authensor.com/etb](https://www.authensor.com/etb).
 - Corpus scenarios are synthetic and deterministic by design, so a real judge's ASR here is a lower bound on what an adaptive attacker achieves.
 
+## Citing this
+
+The paper describing the class, its prevalence, and the training result:
+
+> Kearney, J. (2026). *The Evaluator Trust Boundary: A defect class in AI
+> evaluation infrastructure, its prevalence across 36 organizations, and its
+> removal by training.* Authensor, Inc. <https://doi.org/10.5281/zenodo.21633620>
+
+```bibtex
+@misc{kearney2026etb,
+  title  = {The Evaluator Trust Boundary: A defect class in {AI} evaluation
+            infrastructure, its prevalence across 36 organizations, and its
+            removal by training},
+  author = {Kearney, John},
+  year   = {2026},
+  doi    = {10.5281/zenodo.21633620},
+  url    = {https://doi.org/10.5281/zenodo.21633620},
+  note   = {Authensor, Inc.}
+}
+```
+
+Source and data for the paper are in [`paper/`](paper/).
+
 ## License
 
 MIT. Copyright 2026 Authensor, Inc.
