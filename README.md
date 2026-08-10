@@ -1,8 +1,20 @@
 # etb-scan
 
-**Is your LLM judge grading the model, or is the model grading itself?**
+**Is your LLM judge grading the model — or is the model grading itself?**
 
-`etb-scan` measures whether a judge can be made to pass a failing answer using text the evaluated model wrote. This is **ETB-01**, the first class of [Evaluator Trust Boundary](https://www.authensor.com/etb) failure: *the score depends on an artifact the evaluated system controls.*
+etb-scan finds **evaluator trust boundaries (ETBs)**: the points where an
+evaluation pipeline trusts an artifact it shouldn't.
+
+- Graders that execute model output — and accept what the model tells them
+- Judges that can be steered by the very output they're grading
+- Oracles and answer keys living in public repos
+- Caches that don't know which model they served
+- Denominators that quietly shrink when tests fail
+- Self-reported rewards accepted as scores
+
+Born from published research — *The Evaluator Trust Boundary*
+([Zenodo](https://zenodo.org/records/21633620)) — and used in **100+ filed defect reports across 40+ organizations**, with **15+ fixes landed upstream** (UK AISI, Microsoft, and others). **76 of the first 99 are one
+class: the evaluator trusts an artifact the evaluated system controls.**
 
 Offline. Standard library only. No API keys, no model spend, no network.
 
@@ -20,6 +32,18 @@ judge=naive     overall_asr=1.0000 (25/25)  control_fp=0.0000
   unicode_hidden_smuggling     asr=1.0000 (5/5)
 judge=hardened  overall_asr=0.0000 (0/25)  control_fp=0.0000
 ```
+
+## The rules
+
+[`TAXONOMY.md`](TAXONOMY.md) — stable IDs (ETB-1 … ETB-n), one mechanism
+each, safe to cite. The scanner implements the top rules; the full catalog
+lives at [AUTHENSOR/etb-taxonomy](https://github.com/AUTHENSOR/etb-taxonomy).
+
+## What it is not
+
+A verdict. etb-scan flags tripwires; a human (or an audit) decides what they
+mean for your numbers. The scanner finds the **class** — the
+[audit](https://authensor.com) finds **your instance**.
 
 ## Scanning a real LLM judge: use `--trials`
 
@@ -215,3 +239,10 @@ Source and data for the paper are in [`paper/`](paper/).
 ## License
 
 MIT. Copyright 2026 Authensor, Inc.
+
+---
+
+AUTHENSOR · authenticated evaluation for AI ·
+[authensor.com](https://authensor.com) ·
+[findings](https://github.com/AUTHENSOR/findings) ·
+[eval-cert](https://github.com/AUTHENSOR/eval-cert)
