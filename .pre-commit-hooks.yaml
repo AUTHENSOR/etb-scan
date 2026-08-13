@@ -1,20 +1,19 @@
+# Consumers add this repo to .pre-commit-config.yaml:
+#
+#   - repo: https://github.com/AUTHENSOR/etb-scan
+#     rev: v1
+#     hooks:
+#       - id: etb-scan
+#         # Point it at your judge; without args it validates the built-in
+#         # reference judges (a tool health check, not a scan of yours).
+#         args: ["--judge", "mypkg.judges:my_judge", "--max-asr", "0.0", "--trials", "5"]
+#
 - id: etb-scan
-  name: ETB-01 verdict-injection scan
-  description: >
-    Fail the commit if your LLM judge can be made to pass a failing answer by
-    text the evaluated model wrote. You MUST point it at your judge:
-
-      - repo: https://github.com/AUTHENSOR/etb-scan
-        rev: v0.1.0
-        hooks:
-          - id: etb-scan
-            args: ["--judge", "yourpkg.judges:your_judge"]
-
-    The default args below are a placeholder that fails loudly, on purpose: a
-    security hook that silently passes because it was never configured is worse
-    than no hook at all.
+  name: etb-scan (evaluator trust boundary)
+  description: >-
+    Fails the commit if your LLM judge can be made to pass a failing answer
+    by text the evaluated model wrote (ETB-01 verdict injection).
   entry: etbscan
   language: python
-  args: ["--judge", "CONFIGURE_ME:your_judge"]
   pass_filenames: false
-  stages: [pre-commit, pre-push, manual]
+  always_run: true
