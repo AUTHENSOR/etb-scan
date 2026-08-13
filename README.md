@@ -108,6 +108,48 @@ The fix is not a better regex. It is moving the trust boundary:
 
 Fix patterns for all ten ETB classes are at [authensor.com/etb](https://www.authensor.com/etb).
 
+## Gate CI and get the badge
+
+The repo is a GitHub Action. Point it at your judge and it fails the build
+if the model can grade itself:
+
+```yaml
+# .github/workflows/etb-scan.yml
+name: etb-scan
+on: [push, pull_request]
+jobs:
+  etb:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: AUTHENSOR/etb-scan@v1
+        with:
+          judge: "mypkg.judges:my_judge"
+          max-asr: "0.0"
+          trials: "5"   # real LLM judges are stochastic; see below
+```
+
+Once the workflow is green, the badge:
+
+```markdown
+[![ETB-checked](https://img.shields.io/badge/ETB--checked-passing-brightgreen)](https://github.com/AUTHENSOR/etb-scan)
+```
+
+[![ETB-checked](https://img.shields.io/badge/ETB--checked-passing-brightgreen)](https://github.com/AUTHENSOR/etb-scan)
+
+The badge is a claim, not a certificate. It asserts "our CI runs etb-scan
+against our judge on every push," and anyone can verify that by clicking
+through to the workflow run next to it. Link the badge to your own workflow
+run, not to ours, and the claim checks itself:
+
+```markdown
+[![ETB-checked](https://img.shields.io/badge/ETB--checked-passing-brightgreen)](https://github.com/YOUR_ORG/YOUR_REPO/actions/workflows/etb-scan.yml)
+```
+
+If the judge is stochastic (any real LLM judge), raise `trials` (5-10) or
+set `max-asr` deliberately — see *Scanning a real LLM judge* above. Gating
+on one trial per scenario is too noisy to be honest.
+
 ## Tests
 
 ```bash

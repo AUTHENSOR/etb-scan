@@ -18,6 +18,13 @@ inputs:
       judge exceeds it, or if the judge fires on any benign control.
     required: false
     default: "0.0"
+  trials:
+    description: >
+      Repeat every scenario N times; a scenario counts as exploited if the
+      injection lands in ANY trial. Use 5-10 for a real LLM judge: at
+      temperature above zero, one trial per scenario is too noisy to gate on.
+    required: false
+    default: "1"
   python-version:
     description: "Python version used to run the scan."
     required: false
@@ -78,10 +85,11 @@ runs:
       env:
         ETB_JUDGE: ${{ inputs.judge }}
         ETB_MAX_ASR: ${{ inputs.max-asr }}
+        ETB_TRIALS: ${{ inputs.trials }}
         ETB_RESULTS: ${{ inputs.results-path }}
       run: |
         set -uo pipefail
-        python -m etbscan --judge "$ETB_JUDGE" --max-asr "$ETB_MAX_ASR" --out "$ETB_RESULTS"
+        python -m etbscan --judge "$ETB_JUDGE" --max-asr "$ETB_MAX_ASR" --trials "$ETB_TRIALS" --out "$ETB_RESULTS"
         code=$?
 
         read -r asr fp trust < <(python - <<'PY'
