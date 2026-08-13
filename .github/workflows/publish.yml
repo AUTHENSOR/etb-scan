@@ -19,7 +19,33 @@ permissions:
   contents: read
 
 jobs:
+  guard:
+    # Publish only when the pushed tag names the exact version in
+    # pyproject.toml. Moving the v1 major tag (which tracks main for action
+    # consumers) must not attempt a PyPI upload: PyPI rejects an existing
+    # filename, so a re-upload of the same version fails red every time.
+    runs-on: ubuntu-latest
+    outputs:
+      should_publish: ${{ steps.check.outputs.should_publish }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - id: check
+        run: |
+          ver=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          tag="${GITHUB_REF_NAME}"
+          echo "pyproject version: $ver; ref: $tag"
+          if [ "$tag" = "v$ver" ]; then
+            echo "should_publish=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_publish=false" >> "$GITHUB_OUTPUT"
+            echo "Tag does not name the pyproject version; skipping PyPI publish."
+          fi
+
   build:
+    needs: guard
+    if: needs.guard.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -41,6 +67,8 @@ jobs:
   test:
     # A tag that cannot pass its own test suite must not reach PyPI. A PyPI
     # version number can be yanked but never reused.
+    needs: guard
+    if: needs.guard.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -56,7 +84,8 @@ jobs:
       - run: python -m pytest tests/ -q
 
   publish:
-    needs: [build, test]
+    needs: [guard, build, test]
+    if: needs.guard.outputs.should_publish == 'true'
     runs-on: ubuntu-latest
     environment:
       name: pypi
