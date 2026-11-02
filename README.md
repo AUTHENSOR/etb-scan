@@ -13,8 +13,12 @@ evaluation pipeline trusts an artifact it shouldn't.
 - Self-reported rewards accepted as scores
 
 Born from published research — *The Evaluator Trust Boundary*
-([Zenodo](https://zenodo.org/records/21633620)) — and used in **100+ filed defect reports across 40+ organizations**, with **15+ fixes landed upstream** (UK AISI, Microsoft, and others). **76 of the first 99 are one
-class: the evaluator trusts an artifact the evaluated system controls.**
+([Zenodo](https://zenodo.org/records/21633620)) — and used in the audit behind it:
+**99 defect reports across 46 organizations, 16 fixes landed upstream** (UK AISI,
+NVIDIA, MLflow, and others; snapshot of 2026-07-24, every row in
+[`EVIDENCE-TABLE.md`](EVIDENCE-TABLE.md)). **76 of the 99 are one class: the
+evaluator trusts an artifact the evaluated system controls.** Filing has continued
+since; the table is the number we stand behind.
 
 Offline. Standard library only. No API keys, no model spend, no network.
 
@@ -35,9 +39,9 @@ judge=hardened  overall_asr=0.0000 (0/25)  control_fp=0.0000
 
 ## The rules
 
-[`TAXONOMY.md`](TAXONOMY.md) — stable IDs (ETB-1 … ETB-n), one mechanism
-each, safe to cite. The scanner implements the top rules; the full catalog
-lives at [AUTHENSOR/etb-taxonomy](https://github.com/AUTHENSOR/etb-taxonomy).
+[`TAXONOMY.md`](TAXONOMY.md) — stable IDs (ETB-01 … ETB-10), one mechanism
+each, safe to cite. The scanner measures ETB-01; the catalog with fix patterns
+for every class lives at [authensor.com/etb](https://www.authensor.com/etb).
 
 ## What it is not
 
@@ -121,7 +125,7 @@ jobs:
   etb:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: AUTHENSOR/etb-scan@v1
         with:
           judge: "mypkg.judges:my_judge"
@@ -187,7 +191,9 @@ dependencies.
 | **Weave** | `pip install "etb-scan[weave]"` | `etbscan.integrations.weave.scan_scorer(scorer)` |
 
 All three are exercised against the real framework in CI, on push and weekly,
-because they break from upstream releases rather than from our commits.
+because they break from upstream releases rather than from our commits. (GitHub
+pauses a scheduled workflow after 60 days without a push; if the weekly badge
+goes quiet, re-enable it from the Actions tab or `gh workflow enable integrations.yml`.)
 
 In every adapter, a framework that raises, reports an error, or returns
 something unreadable is **unscorable**, never a failing verdict. Coercing an
@@ -284,7 +290,8 @@ MIT. Copyright 2026 Authensor, Inc.
 
 ---
 
-AUTHENSOR · authenticated evaluation for AI ·
+AUTHENSOR · AI evaluation integrity research ·
 [authensor.com](https://authensor.com) ·
-[findings](https://github.com/AUTHENSOR/findings) ·
-[eval-cert](https://github.com/AUTHENSOR/eval-cert)
+[evidence table](EVIDENCE-TABLE.md) ·
+[taxonomy](TAXONOMY.md) ·
+[disclosure policy](DISCLOSURE.md)

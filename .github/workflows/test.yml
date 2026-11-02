@@ -11,12 +11,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # 3.9 is the floor declared in pyproject.toml; 3.13 is the current
+        # 3.9 is the floor declared in pyproject.toml; 3.14 is the current
         # release. The package is stdlib-only, so this is the whole matrix.
-        python-version: ["3.9", "3.11", "3.13"]
+        python-version: ["3.9", "3.11", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
       - run: pip install -e ".[pytest]"
@@ -27,8 +27,8 @@ jobs:
     # figures ever drift, this fails loudly rather than in a README.
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.11"
       - run: pip install -e .

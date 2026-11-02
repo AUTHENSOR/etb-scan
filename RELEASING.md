@@ -15,12 +15,13 @@ Do this once, signed in as the account that will own the project.
 Trusted Publishing will not work without it, and it is required to create a
 project regardless.
 
-### 2. Create a *pending* publisher
+### 2. Add the Trusted Publisher
 
-<https://pypi.org/manage/account/publishing/>
-
-`etb-scan` does not exist on PyPI yet, so this is a "pending" publisher rather
-than a setting on an existing project. Fill in exactly:
+`etb-scan` exists on PyPI since 2026-07-27 (0.1.0, 0.1.1), so the publisher is
+configured on the project itself: <https://pypi.org/manage/project/etb-scan/settings/publishing/>.
+UNVERIFIED as of 2026-11-02 whether this was done; check before the next tag.
+If the project did not exist, the same fields would go on the "pending publisher"
+form at <https://pypi.org/manage/account/publishing/>. Fill in exactly:
 
 | Field | Value |
 |---|---|
@@ -33,10 +34,6 @@ than a setting on an existing project. Fill in exactly:
 The environment name is not optional here: the workflow declares
 `environment: name: pypi`, and PyPI checks the claim. A mismatch fails the
 upload with a confusing permissions error.
-
-**A pending publisher does not reserve the name.** PyPI is explicit that it
-does not create or hold the project until something is actually published.
-Until the first successful upload, `etb-scan` is available to anyone.
 
 ### 3. Optionally require approval before a publish
 
@@ -63,6 +60,18 @@ git push origin main --follow-tags
 ```
 
 The tag push triggers build, tests on 3.9 and 3.13, then publish.
+
+Then move the Action's major tag, which consumers pin as `AUTHENSOR/etb-scan@v1`,
+and bump the `pip install 'etb-scan==X.Y.Z'` pin inside `action.yml` first if the
+release changed the package:
+
+```bash
+git tag -f v1 vX.Y.Z
+git push -f origin v1
+```
+
+`v1` is the only mutable tag. It must always point at a commit whose `action.yml`
+installs a published etb-scan version.
 
 ## Things that bite
 

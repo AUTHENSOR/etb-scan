@@ -58,7 +58,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{ inputs.python-version }}
 
@@ -131,7 +131,7 @@ runs:
 
     - name: Upload results
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v5
       with:
         name: etb-scan-results
         path: ${{ inputs.working-directory }}/${{ inputs.results-path }}

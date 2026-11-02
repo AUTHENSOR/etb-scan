@@ -41,7 +41,7 @@ one click.
 
 Adapters live in [`etbscan/integrations/`](etbscan/integrations/) and let
 etb-scan measure a judge belonging to another framework. There are adapters for
-DeepEval, Weave, and Ragas; the same shape works for anything with a scorer.
+DeepEval and Weave; the same shape works for anything with a scorer.
 
 An adapter is one function that returns a judge callable:
 

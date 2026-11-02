@@ -12,6 +12,10 @@ name: integrations
 # and nothing in CI would have caught it. A declared integration that nobody
 # runs is a claim, not a feature.
 
+# GitHub pauses scheduled workflows after 60 days without a push to the repo
+# (state "disabled_inactivity"). That happened between 2026-10-19 and 2026-11-02
+# and was re-enabled by hand. Any push resets the clock; otherwise re-enable with
+# `gh workflow enable integrations.yml` and dispatch a run.
 on:
   push:
     branches: [main]

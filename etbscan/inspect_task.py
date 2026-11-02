@@ -29,8 +29,6 @@ the emitted text against a frozen trigger set; no model is in the scoring path.
 
 from __future__ import annotations
 
-from typing import Any
-
 try:
     from inspect_ai import Task, task
     from inspect_ai.dataset import Sample

@@ -26,9 +26,10 @@ from concurrent.futures import ThreadPoolExecutor
 from copy import deepcopy
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from collections.abc import Sequence
+from typing import Any, Callable
 
-from etbscan.judges import JudgeUnscorable, interpret_verdict, is_pass
+from etbscan.judges import JudgeUnscorable, interpret_verdict
 
 Judge = Callable[..., dict]
 
