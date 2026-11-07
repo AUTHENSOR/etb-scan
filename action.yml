@@ -76,7 +76,7 @@ runs:
         # Pinned to this action's own release. Unpinned, a future
         # breaking etb-scan would silently change what a pinned action
         # tag does.
-        pip install 'etb-scan==0.1.1'
+        pip install 'etb-scan==0.2.0'
 
     - name: Scan judge
       id: scan
