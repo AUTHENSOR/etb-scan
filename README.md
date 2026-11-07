@@ -257,6 +257,24 @@ and checked to stay silent on the hardened form of the same code. A finding is a
 look. `# etbscan: ignore[RULE-ID]` on the line suppresses it. Shell rules apply to `.sh`
 files and to files starting with a bash shebang; Python rules to `.py`.
 
+## Harden your grader (`etbscan.guard`)
+
+The fixes the lint keeps recommending, as stdlib helpers you can import instead of re-deriving:
+
+```python
+from etbscan.guard import last_verdict, exact_token, last_label, render_prompt, hardened_restore_lines
+
+verdict = last_verdict(judgment, r"^correct: (yes|no)\s*$", allowed=("yes", "no"))   # final verdict or None
+letter  = exact_token(judgment, ("A", "B", "C"))                                     # bare letter only
+winner  = last_label(judgment, ("[[A]]", "[[B]]", "[[C]]"))                          # last-occurring label
+prompt  = render_prompt(TEMPLATE, {"question": q, "response": r}, candidate_fields=("response",))
+lines   = hardened_restore_lines(base_commit, test_paths, created_paths)              # fail-closed restore
+```
+
+`render_prompt` substitutes every placeholder in one pass, neutralises the template's own markers
+inside candidate fields (space to dash, or a middle dot after the first character: deterministic,
+idempotent, and a no-break space does not bypass it) and fences them. Nothing here calls a model.
+
 ## Verified against a real judge
 
 The figures above characterize two offline mocks. [`verified_run_real_judge/`](verified_run_real_judge/)
