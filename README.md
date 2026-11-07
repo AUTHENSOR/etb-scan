@@ -243,19 +243,22 @@ etbscan lint . --json --fail-on medium                     # CI form
 
 | Rule | Class | Fires on | Stays quiet on |
 |---|---|---|---|
-| `ETB-01-FIRST-MATCH` | ETB-01 | `re.search` of a verdict pattern (`(yes\|no)`, `(A\|B\|C)`, `[[n]]`, `GRADE`, ...) in judge text, first match wins | greedy `(?s).*` prefix, end anchor, `findall(...)[-1]` |
-| `ETB-01-SUBSTRING-ORDER` | ETB-01 | `if "[[A]]" in judgment: ... elif "[[B]]" in judgment` chains | last-occurring label |
-| `ETB-03-DEFAULT-PASS` | ETB-03 | `x if match else "yes"` / `True` / `"A"` | defaulting to unscored or fail |
+| `ETB-01-FIRST-MATCH` | ETB-01 | `re.search` of a verdict pattern (`(yes\|no)`, `(A\|B\|C)`, `PASS\|FAIL`, `[[n]]`, `<score>`, `GRADE`, `Rating:`, `N passing`) in judge text, first match wins | greedy `(?s).*` prefix, end anchor, `^` anchor without `re.M`, `findall(...)[-1]`; regexes with no verdict token (`PASSWORD`, `Failed password`, `scores_*.json`); a bare letter class applied to the candidate's own answer (`pred`, `output_text`, "final answer is") |
+| `ETB-01-SUBSTRING-ORDER` | ETB-01 | `if "[[A]]" in judgment: ... elif "[[B]]" in judgment` chains, reported once at the head of the chain | last-occurring label |
+| `ETB-03-DEFAULT-PASS` | ETB-03 | `x if match else "yes"` / `True` / `"A"` where the value is returned, assigned or passed on in grading context: a function, class or module named like grade / score / judge / verdict / parse / evaluate / metric / reward / correct / pass, or a target named like that | defaulting to unscored or fail; config flags, file modes, fixtures and log strings (`False if flag else True`, `"w" if new else "a"`) |
 | `ETB-02-UNESCAPED-SPLICE` | ETB-02 | a prompt literal with a candidate placeholder next to structural markers in a module that never escapes | any escape/neutralise/delimit helper in the module |
 | `ETB-02-CHAINED-REPLACE` | ETB-02 | `t.replace("<<a>>", x).replace("<<b>>", y)` | single-pass substitution |
 | `ETB-09-EXIT-IGNORED` / `-EXIT-UNUSED` | ETB-09 | test runner `\|\| true`; `VAR=$?` never read | status used in the verdict |
-| `ETB-11-RESTORE-FAILS-OPEN` / `-APPLY-UNCHECKED` | ETB-11 | multi-path `git checkout <ref> a b` without `--`, unchecked `git apply`, no `set -e` | `set -e`, `--`, `\|\| exit 1` |
+| `ETB-11-RESTORE-FAILS-OPEN` / `-APPLY-UNCHECKED` | ETB-11 | multi-path `git checkout <ref> a b` without `--` and no `set -e`; per-path `git checkout <ref> -- "$p" \|\| true` loops (also under `set -e`); unchecked `git apply` | `set -e` with `--`, `\|\| exit 1`, a restore error that stops the script |
 | `ETB-11-REPO-RELATIVE-PYTHON` | ETB-11 | `python3 -` / `-c` / heredoc after `cd` into the graded repository | `PYTHONSAFEPATH`, `python3 -I` / `-P` |
 
 Heuristics, tuned for precision: every rule was built from a pattern found in a shipped grader
-and checked to stay silent on the hardened form of the same code. A finding is a place to
-look. `# etbscan: ignore[RULE-ID]` on the line suppresses it. Shell rules apply to `.sh`
-files and to files starting with a bash shebang; Python rules to `.py`.
+and checked to stay silent on the hardened form of the same code. The thresholds were then
+calibrated against the quoted hits of a 2026-11 survey of 31 public evaluation frameworks;
+`tests/test_lint.py` carries every confirmed hit and every false positive from that survey as a
+fixture. A finding is a place to look. `# etbscan: ignore[RULE-ID]` on the line suppresses it.
+Shell rules apply to `.sh` files and to files starting with a bash shebang; Python rules to
+`.py`. `--json` emits one object: `tool`, `files_scanned`, `counts` by severity, `findings`.
 
 ## Harden your grader (`etbscan.guard`)
 
