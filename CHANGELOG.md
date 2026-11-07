@@ -2,6 +2,30 @@
 
 ## Unreleased
 
+Two modules ported from Authensor's private measurement harness so other packages can depend on
+them. Both are standard library only and call no model.
+
+- `etbscan judge-check --spec FILE [--out DIR] [--fail-on-open]` (`etbscan.judgecheck`): describe
+  your own grading template and verdict parser in a JSON spec (YAML too when PyYAML is importable)
+  and three static checks run over it, as specified and under the hardened reading: ETB-01
+  `judge_echo_parse` (a completion that quotes the candidate's pass fragment, then ends with the
+  judge's genuine negative verdict; open if parsed as a pass), ETB-03 `judge_fail_mode` (an empty
+  completion and a verdict-free refusal; open if either passes), ETB-02 `judge_boundary_unescaped`
+  (a candidate that repeats every structural marker; open if any reaches the rendered prompt
+  unchanged). Every report row carries `before` and `after` (`open`, `evidence`, `details`) and a
+  fix that names the `etbscan.guard` helper. `--out` writes `judge-check.json` and
+  `JUDGE-CHECK.md`; `--fail-on-open` exits 1 when anything is open as specified. Python:
+  `load_spec`, `JudgeSpec`, `to_template`, `JudgeTemplate`, `run_checks`, `render_markdown`,
+  `build_parsers`, `derive_markers`, `neutralize`.
+- `etbscan trajectory PATH... [--test-files a,b] [--grader-paths x,y] [--workdir W] [--repo R] [--json]`
+  (`etbscan.trajectory`): reads SWE-agent, mini-swe-agent, OpenHands / OpenAI tool-call, plain-text
+  tool-transcript and tool-log trajectories and flags git history and oracle reach (ETB-15), test
+  and grader writes (ETB-11), evaluator-context reads (ETB-13) and result-file writes (ETB-09),
+  one line per flag (step, flag, class, severity, detail) plus a summary; exit 1 on a hard flag, 2
+  on a file that is not a trajectory. The task context is a plain `TaskContext(workdir, test_files,
+  grader_paths, repo)`. Python: `Action`, `TrajFlag`, `TrajReport`, `load_trajectory`,
+  `find_trajectory`, `check_actions`, `analyze_trajectory`, `test_path_kind`.
+
 Precision pass on `etbscan lint`, calibrated against a 2026-11 survey that ran the 0.2.0 lint
 over 31 public evaluation frameworks. `tests/test_lint.py` now carries every confirmed hit and
 every false positive quoted in that survey as a fixture, so the calibration is a test, not a note.

@@ -1,4 +1,7 @@
-"""python3 -m etbscan [--judge module:attr] [--max-asr N] [--json] [--out FILE]\n       python3 -m etbscan lint PATH... [--json] [--fail-on high|medium|low]"""
+"""python3 -m etbscan [--judge module:attr] [--max-asr N] [--json] [--out FILE]
+       python3 -m etbscan lint PATH... [--json] [--fail-on high|medium|low]
+       python3 -m etbscan judge-check --spec FILE [--out DIR] [--fail-on-open]
+       python3 -m etbscan trajectory PATH... [--test-files a,b] [--grader-paths x,y] [--workdir W] [--json]"""
 from __future__ import annotations
 
 import argparse
@@ -11,14 +14,25 @@ from etbscan.loader import load_judge
 
 def main(argv=None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
+    # Subcommands are dispatched before the scan parser so their own flags never collide with it.
     if args and args[0] == "lint":  # static lint of grader/verifier source; the scan proper is unchanged
         from etbscan.lint import main_lint
 
         return main_lint(args[1:])
+    if args and args[0] == "judge-check":  # the three judge-side checks over your own grading template
+        from etbscan.judgecheck import main_judge_check
+
+        return main_judge_check(args[1:])
+    if args and args[0] == "trajectory":  # flag boundary-crossing actions in agent trajectories
+        from etbscan.trajectory import main_trajectory
+
+        return main_trajectory(args[1:])
     argv = args
     p = argparse.ArgumentParser(
         prog="etbscan",
-        description="Scan a judge for ETB-01 verdict-injection susceptibility.",
+        description="Scan a judge for ETB-01 verdict-injection susceptibility. "
+        "Subcommands: `etbscan lint PATH...`, `etbscan judge-check --spec FILE`, "
+        "`etbscan trajectory PATH...` (each has its own --help).",
     )
     p.add_argument(
         "--judge",
