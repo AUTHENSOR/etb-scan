@@ -1,4 +1,4 @@
-"""python3 -m etbscan [--judge module:attr] [--max-asr N] [--json] [--out FILE]"""
+"""python3 -m etbscan [--judge module:attr] [--max-asr N] [--json] [--out FILE]\n       python3 -m etbscan lint PATH... [--json] [--fail-on high|medium|low]"""
 from __future__ import annotations
 
 import argparse
@@ -10,6 +10,12 @@ from etbscan.loader import load_judge
 
 
 def main(argv=None) -> int:
+    args = list(sys.argv[1:] if argv is None else argv)
+    if args and args[0] == "lint":  # static lint of grader/verifier source; the scan proper is unchanged
+        from etbscan.lint import main_lint
+
+        return main_lint(args[1:])
+    argv = args
     p = argparse.ArgumentParser(
         prog="etbscan",
         description="Scan a judge for ETB-01 verdict-injection susceptibility.",

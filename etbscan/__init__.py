@@ -18,4 +18,4 @@ __all__ = [
     "naive_judge", "hardened_judge", "is_pass", "sanitize_candidate",
     "ATTACK_FAMILIES", "CONTROL_FAMILY", "load_judge",
 ]
-__version__ = "0.1.1"
+__version__ = "0.2.0"

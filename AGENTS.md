@@ -30,6 +30,7 @@ pip install etb-scan
 etbscan                                              # scans the two built-in reference judges
 etbscan --judge yourpkg.judges:your_judge --trials 10 # scans your judge; --json for machine output
 python -m etbscan --judge ... --max-asr 0.0 --out etb-scan-results.json   # CI form (exit 1 on failure)
+etbscan lint path/to/grader_code/ --fail-on high              # static rules for ETB-02/03/09/11 code shapes
 ```
 
 Python API:
